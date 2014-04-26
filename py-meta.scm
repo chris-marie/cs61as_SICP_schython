@@ -229,9 +229,15 @@
 			       env)))
 	      ;; logical infix operators
 	      ((and? token)
-	       (py-error "TodoError: Person A, Question 5"))
-	      ((or? token)
-	       (py-error "TodoError: Person A, Question 5"))
+	       (if (ask val 'true?)
+		   (py-eval line-obj env)
+		   (begin (eat-tokens line-obj)
+			  *PY-FALSE*)))
+       	      ((or? token)
+	       (if (ask val 'true?)
+		   (begin (eat-tokens line-obj)
+			  *PY-TRUE*)
+		   (py-eval line-obj env)))
 	      ;; test for membership
 	      ((in? token)
 	       (py-error "TodoError: Person B, Question 5"))
