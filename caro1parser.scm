@@ -55,8 +55,9 @@
 ;;;
 (define (py-read)
   (define (get-indent-and-tokens)
-    ;; TODO: Both Partners, Question 2
-    (cons 0 (get-tokens '())))
+    (let ((indent (get-indent 0)))
+      (cons indent (get-tokens '()))))
+
   (define (reverse-brace char)
     (let ((result (assq char '((#\{ . #\}) (#\} . #\{)
 			       (#\( . #\)) (#\) . #\()
@@ -78,13 +79,13 @@
 	    (begin (read-char) '())))
        ((eof-object? char)
 	(if (not (null? braces))
-            (read-error "SyntaxError: End of file inside expression")
+	    (read-error "SyntaxError: End of file inside expression")
             '()))
        ((eq? char #\space)
         (read-char)
         (get-tokens braces))
-       ((eq? char #\#)       ;; Ignore everything after python comment symbol '#'
-        (ignore-comment)     ;;;; Common [#1] IGNORE-COMMENT implemented
+       ((eq? char #\#)
+        (ignore-comment)  ;; common problem #1 
         '())
        ((memq char (list #\[ #\( #\{))
         (let ((s (char->symbol (read-char))))
@@ -97,7 +98,7 @@
        ((memq char (list #\, #\:))
         (let ((t (char->symbol (read-char))))
           (cons t (get-tokens braces))))
-       ((memq char (list #\" #\'))   ;;;; A[#3] GET-STRING implemented 
+       ((memq char (list #\" #\')) ;; A3 GET STRING 
         (let ((t (list->string (get-string (read-char)))))
           (cons t (get-tokens braces))))
        ((memq char operators)
@@ -118,15 +119,14 @@
 		  (get-tokens braces)))
            ((string? token)
 	    (cons (string->symbol token) (get-tokens braces)))
-           (else (cons token (get-tokens braces)))))))))
-  (define (get-token so-far)
+           (else (cons token (get-tokens braces)))))))))(define (get-token so-far)
     (let ((char (peek-char)))
       (if (not (or (char-alphabetic? char)
 		   (char-numeric? char)
 		   (eq? char #\_)))
 	  so-far
 	  (get-token (word so-far (char->symbol (read-char)))))))
-  (define (get-num num-so-far)    ;;;; B[#4]  GET-NUM
+  (define (get-num num-so-far)
     ;; Reads in a number.  Num-so-far a Scheme word (we will convert back into
     ;; a Scheme number in the get-tokens procedure).
     ;; TODO: Person B, Question 3
@@ -156,8 +156,7 @@
 			'**))
 		   ((eq? next #\=) (read-char) '*=)
 		   (else '*))))))
-
-   (define (get-string type)  ;;;; A[#3] GET-STRING person A
+  (define (get-string type) ;; A3x
     (let ((char (read-char)))
       (if (eq? char type)
 	  '()
@@ -167,19 +166,11 @@
     ;; including the closing quote.  Type is the Scheme character that opened
     ;; the string.  The first character returned by (read-char) when this
     ;; function is executed will be the first character of the desired string.
- #|  
-   (define (ignore-comment)  ;;;; Comm[#1] IGRNORE-COMMENT person A
-     (helper-ignore-comment))
-   (get-indent-and-tokens))
- |#
    
-   (define (ignore-comment)  ;;;; Comm[#1] IGRNORE-COMMENT person B
-     (read-ignore comment) )
-     
-   (get-indent-and-tokens)     
-  
+  (define (ignore-comment)
+    (helper-ignore-comment))
+  (get-indent-and-tokens))
 
-   )   ;; end PY-READ
 
 
 ;; Error handler for py-read.  Needs to eat remaining tokens on the line from
@@ -193,15 +184,8 @@
 	  (loop))))
   (loop))
 
-;;;;;;;;;;  Added Utility Procedures for problems
 
-;; Comm[#1] person B   READ-IGNORE 
-    ;; Initially written for ignore-comment. Used for recursively reading and 
-    ;; igrnoring 
-
-
-
-;; Comm[#1] person A  HELPER-IGNORE-COMMENT (ignore-comment) 
+;; 1. Helper proc for (ignore-comment) 
 (define (helper-ignore-comment)
   (let ((char (read-char)))
     (cond ((eof-object? char) 
@@ -211,10 +195,15 @@
 	  (else (helper-ignore-comment)))))
 
 
-;; Comm[#1] person A  GET-INDENT (get-indent-and-tokens)
+;; 2. Helper proc for (get-indent-and-tokens)
 (define (get-indent counter)
   (let ((char (peek-char)))
     (if (not (eq? char #\space))
 	counter
 	(begin (read-char)
 	       (get-indent (+ counter 1))))))
+
+
+
+
+;; A3. 
