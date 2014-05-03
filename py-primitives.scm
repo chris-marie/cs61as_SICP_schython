@@ -418,8 +418,16 @@
 	  (py-error "IndexError: list index out of range: " n))
       (if (< n 0) (set! n (+ n (length val))))
       (replace-item n val)))
-  (method (__contains__ other)
-    (py-error "TodoError: Person A, Question 4"))
+  (method (__contains__ other)                             ;; A-4
+    (let ((objects-in-list (ask self 'val)))
+	    (if (null?
+		 (filter (lambda (x) (ask x 'true?))
+			 (map (lambda (x) (py-apply (ask x '__eq__)
+						    (list other)))
+			      objects-in-list)))
+		*PY-FALSE*
+		*PY-TRUE*)))
+	   
   (method (append)
     (make-py-primitive 'append
 		       (lambda (item)

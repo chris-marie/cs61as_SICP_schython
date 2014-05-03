@@ -53,10 +53,10 @@
 ;; of the form (indentation token1 token2 token3 ...).  Turns the line
 ;; 'def foo(a,b):' into (def foo |(| a |,| b |)| :).
 ;;;
-(define (py-read)
-  (define (get-indent-and-tokens)
-    ;; TODO: Both Partners, Question 2
-    (cons 0 (get-tokens '())))
+(define (py-read)  
+  (define (get-indent-and-tokens)                       ;; COMMON-2
+  (let ((indent (get-indent 0)))
+      (cons indent (get-tokens '()))))
   (define (reverse-brace char)
     (let ((result (assq char '((#\{ . #\}) (#\} . #\{)
 			       (#\( . #\)) (#\) . #\()
@@ -155,15 +155,15 @@
 			'**))
 		   ((eq? next #\=) (read-char) '*=)
 		   (else '*))))))
-  (define (get-string type)
-    ;; Reads in a string and returns a list of Scheme characters, up to, but not
-    ;; including the closing quote.  Type is the Scheme character that opened
-    ;; the string.  The first character returned by (read-char) when this
-    ;; function is executed will be the first character of the desired string.
-    (read-error "TodoError: Person A, Question 3"))
-  (define (ignore-comment)
-    (read-error "TodoError: Both Partners, Question 1"))
+  (define (get-string type)                          ;; A-3
+    (let ((char (read-char)))
+      (if (eq? char type)
+	  '()
+	  (cons char (get-string type)))))
+  (define (ignore-comment)                           ;; COMMON-1
+     (helper-ignore-comment))
   (get-indent-and-tokens))
+
 
 ;; Error handler for py-read.  Needs to eat remaining tokens on the line from
 ;; user input before throwing the error.
@@ -175,3 +175,24 @@
 	  (apply py-error args)
 	  (loop))))
   (loop))
+
+
+
+;; 1. Helper proc for (ignore-comment) 
+(define (helper-ignore-comment)
+  (let ((char (read-char)))
+    (cond ((eof-object? char) 
+	   '*comment-ignored*)
+	  ((char-newline? char)
+	   '*comment-ignored*)
+	  (else (helper-ignore-comment)))))
+
+
+;; 2. Helper proc for (get-indent-and-tokens)
+(define (get-indent counter)
+  (let ((char (peek-char)))
+    (if (not (eq? char #\space))
+	counter
+	(begin (read-char)
+	       (get-indent (+ counter 1))))))
+
