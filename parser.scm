@@ -54,9 +54,12 @@
 ;; 'def foo(a,b):' into (def foo |(| a |,| b |)| :).
 ;;;
 (define (py-read)
-  (define (get-indent-and-tokens)
-    ;; TODO: Both Partners, Question 2
-    (cons 0 (get-tokens '())))
+  (define (get-indent-and-tokens)  ;;;; Comm[#2] GET-AND-INDENT-TOKENS
+    ;(let ((indent (get-indent 0)))    ;;; person A implementation
+    ;(cons indent (get-tokens '())))
+    (let ((indent (count-indent 0)))   ;;; person B implementation
+      (cons indent (get-tokens '())))  )
+
   (define (reverse-brace char)
     (let ((result (assq char '((#\{ . #\}) (#\} . #\{)
 			       (#\( . #\)) (#\) . #\()
@@ -207,7 +210,17 @@
     (cond ((or (eof-object? input-char) (char-newline? input-char))
 	   (print-comment?) )
 	  (else (read-ignore comment))))   )
-       
+
+;; Comm[#2] person B (get-indent-and-tokens)
+    ;; recursively reads the spaces at the begging of a line until a character.
+    ;; returns number of spaces as the size of the indent to support
+    ;; Python's dependency on indentation structure
+    ;; returns number of indents to be paired with line phrase.
+(define (count-indent current-indent)
+  (let ((input-char (peek-char)))
+    (if (eq? input-char #\space)
+	(begin (read-char) (count-indent (+ 1 current-indent)))
+	current-indent))  )
 		    
 
 ;; Comm[#1] person A  HELPER-IGNORE-COMMENT (ignore-comment) 

@@ -181,3 +181,22 @@ STk> (py-read)(se 'work 'as 'a 'char? #\#)
 (0 |(| se "work " as "a " char ?)
 STk> (py-read)(se 'work 'without 'py-comment?)
 (infinite loop)
+
+Comm [#2] GET-AND-INDENT-TOKENS  with utility function COUNT-INDENT
+STk> (py-read)x = 3
+(0 x = 3)
+STk> (py-read) x = 3
+(1 x = 3)
+STk> (py-read)  x = 3
+(2 x = 3)
+STk> (py-read)  x = 3
+(2 x = 3)
+STk> (py-read)                                      x = 3
+(38 x = 3)
+STk> (py-read)        #   hello nurse
+(8)
+STk> (py-read)   1     #   lovely bunch of # coconuts
+(3 1)
+STk> (py-read)   deedlelee dee #   lovely bunch of # coconuts
+(3 deedlelee dee)
+
