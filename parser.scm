@@ -167,20 +167,18 @@
     ;; including the closing quote.  Type is the Scheme character that opened
     ;; the string.  The first character returned by (read-char) when this
     ;; function is executed will be the first character of the desired string.
- #|  
+#|     
    (define (ignore-comment)  ;;;; Comm[#1] IGRNORE-COMMENT person A
      (helper-ignore-comment))
-   (get-indent-and-tokens))
- |#
-   
+
+|#  
+ 
    (define (ignore-comment)  ;;;; Comm[#1] IGRNORE-COMMENT person B
-     (read-ignore comment) )
-     
-   (get-indent-and-tokens)     
+     (read-ignore '*ignore-comment*))
+
   
-
-   )   ;; end PY-READ
-
+   (get-indent-and-tokens)     
+    )   ;; end PY-READ
 
 ;; Error handler for py-read.  Needs to eat remaining tokens on the line from
 ;; user input before throwing the error.
@@ -196,10 +194,21 @@
 ;;;;;;;;;;  Added Utility Procedures for problems
 
 ;; Comm[#1] person B   READ-IGNORE 
-    ;; Initially written for ignore-comment. Used for recursively reading and 
-    ;; igrnoring 
+    ;; Initially written for ignore-comment. Takes one argument of a commentary word.
+    ;; Used for recursively reading, igrnoring, and printing a commentary word
+    ;; If comment argument is 'no-comment, it does not print anything.
 
-
+(define (read-ignore comment)
+  (define (print-comment?)
+    (if (not (equal? comment 'no-comment))
+	comment) )    ;; used as a pred for comment printing
+	    
+  (let ((input-char (read-char)))
+    (cond ((or (eof-object? input-char) (char-newline? input-char))
+	   (print-comment?) )
+	  (else (read-ignore comment))))   )
+       
+		    
 
 ;; Comm[#1] person A  HELPER-IGNORE-COMMENT (ignore-comment) 
 (define (helper-ignore-comment)

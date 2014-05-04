@@ -2,3 +2,182 @@ Christina Hamilton
 University of California, Berkeley 
 CS61as Spring 2014
 Project 4: Scython Interpreter
+
+Comm [#1]  IGNORE-COMMENT with utility function READ-IGNORE
+NOTE argument to READ-IGNORE set to '*ignore-comment*
+
+STk> get-indent
+STk> (py-read)x = 3
+(0 x = 3)
+STk>(py-read)x = 3 + 1
+(0 x = 3 + 1)
+STk> (py-read)x = 3 + 1 # hey comment, don't print
+(0 x = 3 + 1)
+STk> (py-read)x = 3 + 1 # don't print any of these # # # NO#
+(0 x = 3 + 1)
+STk> (py-read)(define x #) #does it work inside parenthesis?
+(0 |(| define x)
+STk> (py-read)#   #by itself?
+(0)
+STk> (py-read)  #
+(0)
+STk> (py-read)what about commented out?
+(0 what about commented out ?)
+STk> (py-read)what about commented out?;#
+(0 what about commented out ? |;|)
+
+**********  ERRORS FOUND:
+STk> (py-read)what about made into a word? '#
+********** ERROR: if I make the python comment inot a scheme word, it goes into an 
+infinite loop and C-c or q cannot interupt so I have to kill STK
+STk> (py-read)(list 1 2 3)
+(0 |(| list 1 2 3 |)|)
+STk> (py-read)(list 1 2 3 #)
+(0 |(| list 1 2 3)
+
+********** ERROR it doesn't work as a word in a list
+STk> (py-read)(list 1 2 3 '#)
+********* WORKS as a character in that it doesn't print as we expect
+STk> (py-read)(list 1 2 3 #\#)
+(0 |(| list 1 2 3)
+
+********** ERROR: sentences do not work in this format -- inifite loop
+STk> '(this is a sentence)
+(this is a sentence)
+STk> (py-read)'(this is a sentence)
+********** ERROR doesn't support this sentence format
+
+STk> (se 'this 'is 'another 'sentence)
+(this is another sentence)
+STk> (py-read)(se 'this 'is 'another 'sentence)
+(0 |(| se "this " is "another " sentence |)|)
+STk> (py-read)(se 'this 'is 'another 'sentence #)
+(0 |(| se "this " is "another " sentence)
+********** ERROR ignore-comment fails for a '# word in the kinf of sentence that it
+usually supports
+STk> (py-read)(se 'this 'is 'another 'sentence '#)
+QUESTION: WHY DOES PY-READ PUPPORT ONE KIND OF SENTENCE (se 'blah 'blah), but not
+the other '(blah blah)
+
+STk> (py-read)(se 'does 'my 'sentence 'work?)
+(0 |(| se "does " my "sentence " work ? |)|)
+STk> (py-read)(se 'does 'my 'sentence 'work 'with 'py-comment-char? #\#)
+(0 |(| se "does " my "sentence " work "with " py - comment - char ?)
+STk> (py-read)(list 1 2 3)
+(0 |(| list 1 2 3 |)|)
+
+NOTE: if '#' is put in a python word.... it does not get commented out.
+STk> (py-read)(se 'hello')
+(0 |(| se "hello" |)|)
+STk> (py-read)(se '#')
+(0 |(| se "#" |)|)
+
+STk> (py-read)'hello'
+(0 "hello")
+STk> (py-read)'#'
+(0 "#")
+STk> (py-read)(se 'hello)
+**********  IN NORMAL SCHEME
+
+STk> (se 1 2 3 '#)
+*** Error:
+    read: bad # syntax: "#"
+Current eval stack:
+__________________
+STk> 
+read: unexpected close parenthesis
+
+STk> (cons 2 3)
+(2 . 3)
+STk> (cons 'hi 'hello)
+(hi . hello)
+STk> (cons 'hi 'hello#)
+(hi . |hello#|)
+STk> (cons 'hi '#)
+*** Error:
+    read: bad # syntax: "#"
+Current eval stack:
+__________________
+STk> 
+read: unexpected close parenthesis
+STk> (py-read)(se 2 3 4)
+(0 |(| se 2 3 4 |)|)
+STk> (py-read)"does it work for strings?"
+(0 "does it work for strings?")
+STk> (py-read)"does it work for strings with a py-coment? #"
+(0 "does it work for strings with a py-coment? #")
+STk> (py-read)"#"
+(0 "#")
+STk> (py-read)(cons 1 2)
+(0 |(| cons 1 2 |)|)
+STk> (py-read)(cons 1 "#")
+(0 |(| cons 1 "#" |)|)
+STk> (py-read)(cons 1 #\#)
+(0 |(| cons 1)
+STk> (py-read)(cons 1 #)
+(0 |(| cons 1)
+**********ERROR does not work for cons in a word
+STk> (py-read)(cons 1 '#)
+
+
+
+STk> (se 2 3 4 "hello")
+(2 3 4 "hello")
+STk> (se 2 3 4 "#")
+(2 3 4 "#")
+STk> '(1 2 3 "hello")
+(1 2 3 "hello")
+STk> '(1 2 3 "#")
+(1 2 3 "#")
+**********ERROR infinit loop
+STk> (py-read)'(1 2 3 4 #\#)
+
+
+********************
+***************  TESTING PARTNER'S (person A) IGNORE-COMMENT to see if she gets the 
+same error.
+
+STk> (py-read)x = 3 + 2
+(0 x = 3 + 2)
+STk> (py-read)x = 3 + 2 # this is my partners ignore-comment code
+(0 x = 3 + 2)
+STk> (py-read)#
+(0)
+STk> (py-read)these are just words
+(0 these are just words)
+STk> (py-read)these are just words # and so are these
+(0 these are just words)
+STk> (py-read)does hers work with scheme comments ;#
+(0 does hers work with scheme comments |;|)
+STk> (py-read) 1 2 3
+(0 1 2 3)
+STk> (py-read) 1 2 3 #\#
+(0 1 2 3)
+STk> (py-read)(list 1 2 3 #\#)
+(0 |(| list 1 2 3)
+STk> (py-read)(list 3 4 5 #)
+(0 |(| list 3 4 5)
+
+ERROR her IGNORE COMMENT does not work in lists as a word
+STk> (py-read)(list 3 4 5 '#)
+
+ERROR PY-READ with her code fails that same format of sentences that mine fails
+STk> (py-read)'(does her code support this kind of sentence)
+
+her code does not work for the (se  ) sentence format that mine DOES work for
+STk> (py-read)(se 'this 'is 'my 'partners 'code 'for 'ignore-comment)
+
+STk> (py-read)'(does her code support this kind of sentence)
+
+STk> (py-read)'(work with a #)
+
+STk> (py-read)3 2 4
+(0 3 2 4)
+STk> (py-read)3 2 4 '#
+
+STRANGELY enough, her code only works for (se  ) sentence format when it contains a
+py-commment in char '#\#'
+STk> (py-read)(se 'work 'as 'a 'char? #\#)
+(0 |(| se "work " as "a " char ?)
+STk> (py-read)(se 'work 'without 'py-comment?)
+(infinite loop)
