@@ -54,9 +54,9 @@
 ;; 'def foo(a,b):' into (def foo |(| a |,| b |)| :).
 ;;;
 (define (py-read)  
-  (define (get-indent-and-tokens)                       ;; COMMON-2
-  (let ((indent (get-indent 0)))
-      (cons indent (get-tokens '()))))
+  (define (get-indent-and-tokens)                       
+  (let ((indent (get-indent 0)))       ;; call indent with 0 as starting indentation
+      (cons indent (get-tokens '())))) ;; start list with indentation and tokens 
   (define (reverse-brace char)
     (let ((result (assq char '((#\{ . #\}) (#\} . #\{)
 			       (#\( . #\)) (#\) . #\()
@@ -81,33 +81,33 @@
             (read-error "SyntaxError: End of file inside expression")
             '()))
 	    ((eq? char #\space)
-        (read-char)
-        (get-tokens braces))
+	     (read-char)
+	     (get-tokens braces))
 	    ((eq? char #\#)
-        (ignore-comment)
-        '())
+	     (ignore-comment)
+	     '())
 	    ((memq char (list #\[ #\( #\{))
-        (let ((s (char->symbol (read-char))))
-          (cons s (get-tokens (cons char braces)))))
+	     (let ((s (char->symbol (read-char))))
+	       (cons s (get-tokens (cons char braces)))))
 	    ((memq char (list #\] #\) #\}))
-	      (if (and (not (null? braces)) (eq? char (reverse-brace (car braces))))
-            (let ((t (char->symbol (read-char))))
-              (cons t (get-tokens (cdr braces))))
-            (read-error "SyntaxError: mismatched brace: " char)))
+	     (if (and (not (null? braces)) (eq? char (reverse-brace (car braces))))
+		 (let ((t (char->symbol (read-char))))
+		   (cons t (get-tokens (cdr braces))))
+		 (read-error "SyntaxError: mismatched brace: " char)))
 	    ((memq char (list #\, #\:))
-        (let ((t (char->symbol (read-char))))
-          (cons t (get-tokens braces))))
-	    ((memq char (list #\" #\'))
-        (let ((t (list->string (get-string (read-char)))))
-          (cons t (get-tokens braces))))
+	     (let ((t (char->symbol (read-char))))
+	       (cons t (get-tokens braces))))
+	    ((memq char (list #\" #\')) ;; check if char is opening a string
+	     (let ((t (list->string (get-string (read-char))))) ;; pass in the type of quote
+	       (cons t (get-tokens braces))))
 	    ((memq char operators)
-        (let ((t (get-operator)))
-          (cons t (get-tokens braces))))
+	     (let ((t (get-operator)))
+	       (cons t (get-tokens braces))))
 	    ((char-numeric? char)
-	      (let ((num (get-num "")))
-	        (if (string? num)
-              (cons (string->number num) (get-tokens braces))
-              (cons num (get-tokens braces)))))
+	     (let ((num (get-num "")))
+	       (if (string? num)
+		   (cons (string->number num) (get-tokens braces))
+		   (cons num (get-tokens braces)))))
 	    (else
 	     (let ((token (get-token (char->symbol (read-char)))))
 	       (cond
@@ -155,12 +155,12 @@
 			'**))
 		   ((eq? next #\=) (read-char) '*=)
 		   (else '*))))))
-  (define (get-string type)                          ;; A-3
-    (let ((char (read-char)))
-      (if (eq? char type)
-	  '()
-	  (cons char (get-string type)))))
-  (define (ignore-comment)                           ;; COMMON-1
+  (define (get-string type)   ;; type == quote passed  (A3)                      
+    (let ((char (read-char))) ;; char == first char after the quote 
+      (if (eq? char type)     ;; if char is the same as the quote passed in
+	  '()                 ;; finish the token!
+	  (cons char (get-string type))))) ;; else, start making a token list with char 
+  (define (ignore-comment)    ;; COMMON-1
      (helper-ignore-comment))
   (get-indent-and-tokens))
 
@@ -180,19 +180,19 @@
 
 ;; 1. Helper proc for (ignore-comment) 
 (define (helper-ignore-comment)
-  (let ((char (read-char)))
-    (cond ((eof-object? char) 
+  (let ((char (read-char)))         ;; eat the char! (hashtag eaten first time thru) 
+    (cond ((eof-object? char)       ;; reach the end of obj? return nothing
 	   '*comment-ignored*)
-	  ((char-newline? char)
+	  ((char-newline? char)     ;; reach a new line? return nothing 
 	   '*comment-ignored*)
-	  (else (helper-ignore-comment)))))
+	  (else (helper-ignore-comment)))))  ;; inside the comment, loop back through
 
 
 ;; 2. Helper proc for (get-indent-and-tokens)
 (define (get-indent counter)
-  (let ((char (peek-char)))
-    (if (not (eq? char #\space))
-	counter
-	(begin (read-char)
-	       (get-indent (+ counter 1))))))
+  (let ((char (peek-char)))         ;; look at the next char
+    (if (not (eq? char #\space))    ;; if its not equal to a space
+	counter                     ;; return counter, i.e. number of spaces
+	(begin (read-char)          ;; else, eat the space
+	       (get-indent (+ counter 1)))))) ;; and call get-indent again with cdr, +1 counter
 

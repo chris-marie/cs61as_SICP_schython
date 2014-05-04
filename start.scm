@@ -1,9 +1,11 @@
+
+#|
 (load "obj.scm")
 (load "parser.scm")
 (load "py-primitives.scm")
 (load "py-meta.scm")
 (initialize-python)
-
+|#
 ;;if you're using emacs, comment out the above code and make the following changes:
 ;; 1. Locate the directory where your schython files are
 ;; 2. Prepend the path to all the load commands above
@@ -12,9 +14,9 @@
 ;;   /path/to/schython
 ;; my start.scm files would look like:
 ;;
-;; (load "/path/to/schython/obj.scm")
-;; (load "/path/to/schython/parser.scm")
-;; (load "/path/to/schython/py-primitives.scm")
-;; (load "/path/to/schython/py-meta.scm")
-;; (initialize-python)
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/obj.scm")
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/parser.scm")
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/py-primitives.scm")
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/py-meta.scm")
+ (initialize-python)
 
