@@ -200,3 +200,63 @@ STk> (py-read)   1     #   lovely bunch of # coconuts
 STk> (py-read)   deedlelee dee #   lovely bunch of # coconuts
 (3 deedlelee dee)
 
+
+B[#3] GET-NUM  
+utility function DOT?
+STk> (comma? (char->symbol #\,))
+#t
+STk> (comma? (char->symbol #\.))
+#f
+STk> (dot-symbol? (char->symbol #\.))
+#t
+STk> (dot-symbol? (char->symbol #\,))
+#f
+STk> (dot-symbol? (char->symbol #\'))
+#f
+
+untillity function DOT-CHAR?
+STk> (dot-char? #\.)
+#t
+STk> (dot-char? (char->symbol #\.))
+#f
+STk> (dot-char? #\,)
+#f
+
+GET-NUM 
+
+original:
+ (define (get-num num-so-far)
+    ;; Reads in a number.  Num-so-far a Scheme word (we will convert back into
+    ;; a Scheme number in the get-tokens procedure).
+    ;; TODO: Person B, Question 3
+ ((char-numeric? char)
+	(let ((num (get-num "")))
+	  (if (string? num)
+              (cons (string->number num) (get-tokens braces))
+              (cons num (get-tokens braces)))))
+  (cond
+           ((and (string? token)
+                 (eq? (string-ref token 0) #\.)
+                 (char-numeric? (string-ref token 1)))
+	    (cons (word (string->symbol (string-append "0" token)))
+		  (get-tokens braces)))
+(define (get-num num-so-far)
+    (let ((char (peek-char)))
+      (if (char-numeric? char)
+	  (get-num (word num-so-far (char->symbol (read-char))))
+	  num-so-far)))
+trial 1  -infinite loop
+STk> (py-read)3.1
+(0 3.1)
+STk> (py-read)3.1 + 4.2
+(0 3.1 + 4.2)
+STk> (py-read)print 3.14.foo
+(0 print 3.14 .foo)
+STk> (py-read)print 3.14
+(0 print 3.14)
+STk> (py-read)print 3.14 +5.13
+(0 print 3.14 + 5.13)
+STk> (py-read)print (list 2 3 4 6 )
+(0 print |(| list 2 3 4 6 |)|)
+STk> (py-read)print (list 2 3 4 6 1000.3)
+(0 print |(| list 2 3 4 6 1000.3 |)|)

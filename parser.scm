@@ -32,7 +32,7 @@
       token)))
 
 ;; Parser utility functions
-(define (char->symbol ch) (string->symbol (make-string 1 ch)))
+(define (char->symbol ch) (string->symbol (make-string 1 ch))) ;1 is # of ch in string
 (define operators '(#\+ #\- #\* #\/ #\% #\< #\> #\! #\=))
 (define (comma? symbol) (eq? symbol '|,|))
 (define (colon? symbol) (eq? symbol '|:|))
@@ -47,6 +47,9 @@
       (and (eq? char #\return)
 	   (eq? (peek-char) #\newline)
 	   (read-char))))  ;; chomp off newline
+;; B[#3] GET-NUM
+(define (dot-symbol? symbol) (eq? symbol '|.|))  ;for symbols
+(define (dot-char? char) (eq? char #\.))   ; for characters
 
 ;;;;
 ;; The main tokenizer.  Reads in a line from standard input and returns a list
@@ -67,6 +70,7 @@
       (if result
 	  (cdr result)
 	  (read-error "SyntaxError: bad closing brace: " char))))
+  
   (define (get-tokens braces)
     ;; Reads in until the end of the line and breaks the stream of input into a
     ;; list of tokens.  Braces is a list of characters representing open brace
@@ -100,22 +104,26 @@
        ((memq char (list #\, #\:))
         (let ((t (char->symbol (read-char))))
           (cons t (get-tokens braces))))
+       
        ((memq char (list #\" #\'))   ;;;; A[#3] GET-STRING implemented 
         (let ((t (list->string (get-string (read-char)))))
           (cons t (get-tokens braces))))
+       
        ((memq char operators)
         (let ((t (get-operator)))
           (cons t (get-tokens braces))))
-       ((char-numeric? char)
-	(let ((num (get-num "")))
+      
+       ((char-numeric? char)         ;;;; B[#3 ] GET-NUM implemented
+	(let ((num (get-num "" #f)))   ;; dot-flag initally false
 	  (if (string? num)
               (cons (string->number num) (get-tokens braces))
               (cons num (get-tokens braces)))))
+       
        (else
 	(let ((token (get-token (char->symbol (read-char)))))
 	  (cond
            ((and (string? token)
-                 (eq? (string-ref token 0) #\.)
+                 (DOT-CHAR? (string-ref token 0))   ;; more clear with this
                  (char-numeric? (string-ref token 1)))
 	    (cons (word (string->symbol (string-append "0" token)))
 		  (get-tokens braces)))
@@ -129,14 +137,23 @@
 		   (eq? char #\_)))
 	  so-far
 	  (get-token (word so-far (char->symbol (read-char)))))))
-  (define (get-num num-so-far)    ;;;; B[#4]  GET-NUM
+
     ;; Reads in a number.  Num-so-far a Scheme word (we will convert back into
     ;; a Scheme number in the get-tokens procedure).
-    ;; TODO: Person B, Question 3
+    ;; maintain a dot-flag - boolean tracking if there has already been a dot
+    ;; in the number
+
+  (define (get-num num-so-far dot-flag)    ;;;; B[#4]  GET-NUM
     (let ((char (peek-char)))
-      (if (char-numeric? char)
-	  (get-num (word num-so-far (char->symbol (read-char))))
-	  num-so-far)))
+      (cond ((char-numeric? char)
+	     (get-num (word num-so-far (char->symbol (read-char))) dot-flag))
+	    ((dot-char? char) 	    
+	     (if dot-flag    
+		 num-so-far   ;; do not throw error, just return current number
+			      ;; set dot-flag to true
+		 (get-num (word num-so-far (char->symbol (read-char))) #t)))
+	    (else num-so-far)))  )
+
   (define (get-operator)
     (let ((char (read-char))
 	  (next (peek-char)))
@@ -221,7 +238,9 @@
     (if (eq? input-char #\space)
 	(begin (read-char) (count-indent (+ 1 current-indent)))
 	current-indent))  )
-		    
+		   
+;; B[#3] (GET-NUM)  
+
 
 ;; Comm[#1] person A  HELPER-IGNORE-COMMENT (ignore-comment) 
 (define (helper-ignore-comment)
