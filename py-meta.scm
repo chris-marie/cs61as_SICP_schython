@@ -120,14 +120,15 @@
 	      ((lambda? token) (eval-lambda line-obj env))
 	      ((import? token) (eval-import line-obj))
 	      ((raise? token) (eval-raise line-obj env))
-	      ((open-bracket? token)
+	      ((open-bracket? token)                                
 	       (if (memq 'for (ask line-obj 'tokens))
 		   (eval-list-comp line-obj env)
 		   (make-py-list
-		    (collect-sequence line-obj env close-bracket-symbol))))
-		  ((open-brace? token)
-		   (make-py-dictionary
-		    (collect-key-value line-obj env close-brace-symbol)))
+
+		    (collect-sequence line-obj env close-bracket-symbol))))   
+	      ((open-brace? token)
+	       (make-py-dictionary
+		(collect-key-value line-obj env close-brace-symbol)))
     ;; handle both value dereferences and value assignments of lists and 
     ;; dictionaries. This breaks the handle-infix model for assignments but 
     ;; is the cleanest way to solve the lookahead problem
@@ -267,10 +268,7 @@
 		   (begin (eat-tokens line-obj)
 			  val)
 		   (py-eval line-obj env)))
-	   
-;		   (begin (eat-tokens line-obj)  ????? WHY COMMENTED OUT?
-;			  *PY-TRUE*)
-;		   (py-eval line-obj env)))
+
 	      ;; test for membership
     
  	      ;; dot syntax message: val.msg
@@ -344,13 +342,35 @@
       ((eq? token close-token) '())
       ((comma? token) (collect-sequence line-obj env close-token))
       (else
-       (ask line-obj 'push token)
+       (ask line-obj 'push token)                                        
        (let ((obj (py-eval line-obj env)))
 			(cons obj
 			   (collect-sequence line-obj env close-token)))))))
-   ;;;; Comm[#8] COLLECT-KEY-VALUE
-(define (collect-key-value line-obj env close-token)
-  (py-error "TodoError: Both Partners. Question 8")) ;;;
+
+
+ 
+(define (collect-key-value line-obj env close-token)  ;; Common-8
+  (let ((token (ask line-obj 'next)))
+    (cond ((eq? token close-token) '())
+	  ((comma? token) (collect-key-value line-obj env close-token)) 
+	  (else                                    ;; must be beginning of a new pair
+	   (ask line-obj 'push token)              ;; push key to begining of token list
+	   
+	   (let ((key (py-eval line-obj env)))     ;; evaluate the key, and actually eats until colon
+	     (if (colon? (ask line-obj 'peek))     ;; sanity check for colon after key
+		 (begin (ask line-obj 'next)       ;; eat the colon
+			(let ((valu (py-eval line-obj env)))        ;; evaluate the key
+			  (cons (cons key valu)                          ;; cons key and valu together
+				(cond ((comma? (ask line-obj 'peek))     ;; sanity check to see if comma is before next kv-pair
+				       (collect-key-value line-obj env close-token)) ;; if it is, then recursive call fxn
+				      ((eq? (ask line-obj 'peek) close-token) 
+				       (begin (ask line-obj 'next)    ;; need line-obj to be empty in order to return '()
+					      '()))                   ;; if it is last kv-pair, then return empty list
+				      (else (py-error "SyntaxError: Expected comma to separate key-value pairs")))))) ;; if no comma, then py-error 
+		 (py-error "SyntaxError: Expected colon to separate key and value")))))))
+		
+
+
 
 
 ;; Variables and Assignment: taken mostly from Abelson and Sussman's
@@ -634,69 +654,6 @@
   (cdr (split-block (cadddr block))))  ;; this will be #f if there is no else 
 |#
 
-;;;;;;;;;;;;  PERSON B
-
-  ;; Generic Utility Functions Used for Blocks
-;; All blocks have the same generic construct, a list of:
-;; 1) the Schython block identifier:  *BLOCK*
-;; 2) the block type recognized by EVAL-BLOCK:  *<TYPE>-BLOCK*'
-;; 3) a pair of the name and parameters
-;; 4) the body of the block
-   ;; 4a)  which requires indentation for MAKE-LINE-OBJ
-
-(define (block-tag block)
-  (car block) )
-(define (block-type block)
-  (cadr block) )
-(define (block-param-pred block)
-  (caddr block) )
-(define (block-body block)
-  (cadddr block) )
-(define (block-indentation block-line-obj)
-  (ask block-line-obj 'indentation) )
-
-;; Python loop separate their predicate looping line and their body with a colon,
-;; therefore, it is useful to have a generic block procedure that takes in
-;; block line-object, parses it for the colon, and returns everything before the 
-;; colon
-(define (parse-colon line-obj env)
-  (let ((token (ask line-obj 'next)))
-    (if (colon? token)
-	'()
-	(cons token (parse-colon line-obj env)))) )	   
-
-;; a WHILE-BLOCK is a list of two block tags, a pair of name and params, and a body.
-;; exp: 
-;; (list (block-tag = *BLOCK*) (type-tag = *WHILE-BLOCK*) (while preds) (while body))
-;; ie: (list    car              cadr                        caddr     :     cadddr)
-
-
-;; Constructor: MAKE-WHILE-BLOCK    (used by eval-item and make-block) 
-(define (make-while-block line-obj env)
-  (let ((while-pred (collect-pred-list line-obj env))
-	(while-body (read-block (block-indentation line-obj) env)))
-    (list '*BLOCK* '*WHILE-BLOCK* while-pred while-body)) )
-
-(define while-block-pred block-param-pred)
-
-;; the while loop body actually is considered to seperate bodies, the while-body
-;; and the else-body
-(define (while-block-body while-block)
-  (let ((body (block-body while-block)))
-    (car (split-block body)))  )
-
-(define (while-block-else while-block)
-  (let ((body (block-body while-block)))
-    (cdr (split-block body)))  )
-
-;; The predicates of a while loop stop at the colon separating preds and while body
-;; helper procedure to collect the list of tokens before the colon
-(define (collect-pred-list line-obj env)
-  (let ((indentation (block-indentation line-obj))
-	(pred-list (parse-colon line-obj env)))
-    (cons indentation pred-list)) )
-
-
 ;;;;;;;;;;;;  Comm[#6] implemented for persons A and B
 
 (define (eval-while-block block env)
@@ -717,25 +674,59 @@
       (loop))))
 
 
-
-
-
-
-
 ;; For loops
-(define (make-for-block line-obj env)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-var block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-collection block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-body block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-else block)
-  (py-error "TodoError: Person A, Question 7"))
+;;;; For loop constructors
 
+;; try to with one less parameter in for-block list 
+(define (make-for-block line-obj env)             ;; creates a FOR-BLOCK
+  (let ((var (ask line-obj 'next))                ;; for is eaten, so next token is variable
+	(collection (begin (ask line-obj 'next)   ;; eat the variable
+			   (collect-collection line-obj env)))  ;; finally at the collection
+	(body (read-block (ask line-obj 'indentation) env)))
+    (list '*BLOCK* '*FOR-BLOCK* (cons var collection) body))) ;; final FOR-BLOCK 
+
+
+;; helper to collect collection
+(define (collect-collection line-obj env)         ;; grabs collection before the colon
+  (let ((token (ask line-obj 'next)))             ;; grabs first token of collection (after in)
+    (if (colon? token)                            ;; checks if at the end of collection
+	'()
+	(cons token (collect-collection line-obj env))))) ;; starts making a token list of coll
+
+;;;; For loop selectors 
+;;;; assume working with (*BLOCK* *FOR-LOOP* ... ) 
+(define (for-block-var block)                     ;; return the 3rd item of list
+  (caaddr block))                          
+(define (for-block-collection block)              ;; return the 4th item of list   
+  (cdaddr block))                      
+(define (for-block-body block)                    ;; return the car (body) of 5th item of list
+  (car (split-block (cadddr block))))
+(define (for-block-else block)                    ;; return the cdr (else) of 5th item of list 
+  (cdr (split-block (cadddr block))))
+
+
+
+;;;; For loop evaluator
 (define (eval-for-block block env)
-  (py-error "TodoError: Person A, Question 7"))
+  (let ((collection-obj (py-eval (instantiate line-obj '*DUMMY-INDENT*   ;; make line-obj
+					      (for-block-collection block)) ;; py-eval it 
+				 env))
+	(var (for-block-var block))                              ;; select variable
+	(body (for-block-body block))                            ;; select body
+	(else-clause (for-block-else block)))                    ;; select else-clause
+    (let ((result (ask collection-obj '__iter__ var body env))   ;; iterate and get result
+	  (should-eval-if else-clause))                          ;; grab else clause
+      (cond ((eq? result '*BREAK)                                ;; did it break?
+	     (set! should-eval-if #f)                            ;; set should-eval-if #f 
+	     *NONE*)                                             ;; return *NONE* object
+	    ((not (eq? should-eval-if #f))                       ;; is there an else?
+	     (eval-item (make-line-obj else-clause) env))        ;; eval it!
+	    ((eq? should-eval-if #f) *NONE*)                     ;; no else? return *NONE* object
+	    (else result)))))                                    ;; i think return result IDK
+     
+		
+
+
 
 ;; List Access
 (define (get-slice line-obj env)

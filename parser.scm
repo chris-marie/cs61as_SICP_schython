@@ -46,14 +46,18 @@
   (or (eq? char #\newline) ;; you're in
       (and (eq? char #\return)
 	   (eq? (peek-char) #\newline)
-	   (read-char))))  ;; chomp off newline
+
+	   (read-char)))) ;; chomp off newline
+
+	  
 ;; B[#3] GET-NUM
 (define (dot-symbol? symbol) (eq? symbol '|.|))  ;for symbols
 (define (dot-char? char) (eq? char #\.))   ; for characters
 
+
 ;;;;
 ;; The main tokenizer.  Reads in a line from standard input and returns a list
-;; of the form (indentation token1 token2 token3 ...).  Turns the line
+;; of the (indentation token1 token2 token3 ...).  Turns the line
 ;; 'def foo(a,b):' into (def foo |(| a |,| b |)| :).
 ;;;
 
