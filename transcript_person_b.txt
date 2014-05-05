@@ -325,3 +325,50 @@ STk> (ask (negate-bool *py-false*) 'true?)
 #t
 STk> (ask (negate-bool *py-true*) 'true?)
 #f
+
+B[#5] add IN support 
+
+for refference 
+              ;;;;A[#4] __CONTAINS__
+  (method (__contains__ other)               
+    (let ((objects-in-list (ask self 'val)))
+	    (if (null?
+		 (filter (lambda (x) (ask x 'true?))
+			 (map (lambda (x) (py-apply (ask x '__eq__)
+						    (list other)))
+			      objects-in-list)))
+		*PY-FALSE*
+		*PY-TRUE*)))
+(define (make-line-obj line)
+  (instantiate line-obj (indentation line) (tokens line)))
+
+;; A class to represent a sequence of tokens to be used by the evaluator.
+(define-class (line-obj indentation tokens)
+  (method (empty?)
+    (null? tokens))
+  (method (exit?)
+    (member tokens '((exit |(| |)|) (quit |(| |)|))))
+  (method (peek)
+    (car tokens))
+  (method (push token)
+    (set! tokens (cons token tokens)))
+  (method (next)
+    (let ((token (car tokens)))
+      (set! tokens (cdr tokens))
+      token)))
+
+**********  IN
+>>> 4 in [1, 3, 4]
+True
+>>> 4 in [1, 3, 5]
+False
+
+**********  NOT IN
+>>> 4 in [1, 2, 3]
+False
+>>> 4 not in [1, 2, 3, 4]
+False
+>>> 4 not in [1, 2, 3]
+True
+>>> 4 not in [1000004, 1]
+True

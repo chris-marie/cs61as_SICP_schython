@@ -244,15 +244,16 @@
    ;;;; B[#5] IN?
    ;; checks if the variable TOKEN (the nest token in line) is "in"
 	      ((in? token)
-	       (let ((next-token (eval-item line-obj env)))
-		 (let ((list-item (ask val 'val)))
-		   (if (ask next-token '__contains__ list-item)
-		       *PY-TRUE*
-		       *PY-FALSE*))) )
-		 
+	       (let ((next-list (eval-item line-obj env)))
+		 (ask next-list '__contains__ val)))
+	      		 
    ;;;; B[#5] NOT?	      
 	      ((not? token)
-	       (py-error "TodoError: Person B, Question 5"))
+	       (let ((in-token? (ask line-obj 'next)))
+		 (if (in? in-token?)
+		     (let ((next-list (eval-item line-obj env)))
+		       (negate-bool (ask next-list '__contains__ val)))) ))
+		       
 	      ;; logical infix operators
    ;;;; A[#5] AND
 	      ((and? token)
