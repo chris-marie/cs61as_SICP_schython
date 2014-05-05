@@ -120,59 +120,54 @@
 	      ((lambda? token) (eval-lambda line-obj env))
 	      ((import? token) (eval-import line-obj))
 	      ((raise? token) (eval-raise line-obj env))
-	      ((open-bracket? token)
+	      ((open-bracket? token)                                
 	       (if (memq 'for (ask line-obj 'tokens))
 		   (eval-list-comp line-obj env)
 		   (make-py-list
+		    <<<<<<< HEAD
+		    
 		    (collect-sequence line-obj env close-bracket-symbol))))
-		  ((open-brace? token)
-		   (make-py-dictionary
-		    (collect-key-value line-obj env close-brace-symbol)))
+	      ((open-brace? token)   ; Comm[#8]  - Parsing Dictionary 
+	       (make-py-dictionary   ; person A implementation
+		(collect-key-value line-obj env close-brace-symbol)))
     ;; handle both value dereferences and value assignments of lists and 
     ;; dictionaries. This breaks the handle-infix model for assignments but 
     ;; is the cleanest way to solve the lookahead problem
 		   ;;(dict['hello']) or (list[0]) or (list[x] = y)
-		  ((bracket-dereference? token line-obj)
-		   (let ((val (lookup-variable-value token env)))
-		     (ask line-obj 'next) ;; remove '[' token
-		     (define key #f)
-		     (cond
-		      ((py-list? val)
-		       (set! key (get-slice line-obj env))) ;;get the list slice
-		      ((py-dict? val)
-		       (set! key 
-			     (eval-inside-delimiters 
-			      line-obj env 
-			      open-bracket-symbol 
-			      close-bracket-symbol))) ;;get the dictionary key
-		      (else (print (ask val 'type))
-			    (print val)
-			    (print (py-list? val))
-			    (print (py-dict? val))
-			    (py-error "token not subscriptable")))
-		     
-		     (if (and (not (ask line-obj 'empty?))
-			      (eq? (ask line-obj 'peek) '=))
-			 (begin (ask line-obj 'next) ;; remove '=' token
-				;;set item in dict or list
-				(ask val '__setitem__ key (py-eval line-obj env))) 
-			 (ask val '__getitem__ key))))
-		  ((assignment? token line-obj)
-		   (define-variable! token (py-eval line-obj env) env)
-		   *NONE*)
-		  ((application? token line-obj) 
-;;application? must come before variable? 
-;;because both applications and variables start with strings: i.e: foo and foo()
-		   ;variable name, i.e, fib in fib()
-		   (let ((func (lookup-variable-value token env))) 
-		     (eval-func func line-obj env)))
-		  ((variable? token)
-		   (let ((val (lookup-variable-value token env)))
-		      ;variable lookup
-		     (if val val (py-error "NameError: Unbound variable: " token))))
-		  (else (py-error "SyntaxError: Unrecognized token: " token))))
+	       (let ((val (lookup-variable-value token env)))
+		 (ask line-obj 'next) ;; remove '[' token
+		 (define key #f)
+		 (cond
+		  ((py-list? val)
+		   (set! key (get-slice line-obj env))) ;;get the list slice
+		  ((py-dict? val)
+		   (set! key                           ;;get the dictionary key
+			 (eval-inside-delimiters 
+			  line-obj env 
+			  open-bracket-symbol 
+			  close-bracket-symbol))) 
+		  (else (print (ask val 'type))
+			(print val)
+			(print (py-list? val))
+			(print (py-dict? val))
+			(py-error "token not subscriptable")))
+		 
+		 (if (and (not (ask line-obj 'empty?))
+			  (eq? (ask line-obj 'peek) '=))
+		     (begin (ask line-obj 'next) ;; remove '=' token
+			    (ask val '__setitem__ key (py-eval line-obj env))) ;;set item in dict or list
+		     (ask val '__getitem__ key))))
+	      ((assignment? token line-obj)
+	       (define-variable! token (py-eval line-obj env) env)
+	       *NONE*)
+	      ((application? token line-obj) ;;application? must come before variable? because both applications and variables start with strings: i.e: foo and foo()
+	       (let ((func (lookup-variable-value token env))) ;variable name, i.e, fib in fib()
+		 (eval-func func line-obj env)))
+	      ((variable? token)
+	       (let ((val (lookup-variable-value token env)))
+		 (if val val (py-error "NameError: Unbound variable: " token)))) ;variable lookup
+	      (else (py-error "SyntaxError: Unrecognized token: " token))))))
 
-      )  )   ;; end EVAL-ITEM
 
 ;; Prints a python object.
 (define (py-print obj)
@@ -267,10 +262,7 @@
 		   (begin (eat-tokens line-obj)
 			  val)
 		   (py-eval line-obj env)))
-	   
-;		   (begin (eat-tokens line-obj)  ????? WHY COMMENTED OUT?
-;			  *PY-TRUE*)
-;		   (py-eval line-obj env)))
+
 	      ;; test for membership
     
  	      ;; dot syntax message: val.msg
@@ -344,15 +336,37 @@
       ((eq? token close-token) '())
       ((comma? token) (collect-sequence line-obj env close-token))
       (else
-       (ask line-obj 'push token)
+       (ask line-obj 'push token)                                        
        (let ((obj (py-eval line-obj env)))
 			(cons obj
 			   (collect-sequence line-obj env close-token)))))))
+
    ;;;; Comm[#8] COLLECT-KEY-VALUE
-(define (collect-key-value line-obj env close-token)
-  (py-error "TodoError: Both Partners. Question 8")) ;;;
-
-
+(define (collect-key-value line-obj env close-token)  
+  (let ((token (ask line-obj 'next)))
+    (cond ((eq? token close-token) '())
+	  ((comma? token) (collect-key-value line-obj env close-token)) 
+	  (else                            ;; must be beginning of a new pair
+	   (ask line-obj 'push token)      ;; push key to begining of token list
+	   ;; evaluate the key, and actually eats until colon
+	   (let ((key (py-eval line-obj env)))     
+	     (if (colon? (ask line-obj 'peek))    ;; sanity check for colon after key
+		 (begin (ask line-obj 'next)      ;; eat the colon
+			(let ((valu (py-eval line-obj env)))     ;; evaluate the key
+			  (cons (cons key valu)   ;; cons key and valu together
+            ;; sanity check to see if comma is before next kv-pair
+				(cond ((comma? (ask line-obj 'peek))    
+            ;; if it is, then recursive call fxn
+				       (collect-key-value line-obj env close-token)) 
+				      ((eq? (ask line-obj 'peek) close-token) 
+              ;; need line-obj to be empty in order to return '()
+				       (begin (ask line-obj 'next)  
+					      '())) ;; if last kv-pair, RET empty list
+				      (else  ;; if no comma, then py-error 
+				       (py-error "SyntaxError: Expected comma to separate key-value pairs"))))) )
+		 (py-error "SyntaxError: Expected colon to separate key and value"))
+	     ))))  )
+		
 ;; Variables and Assignment: taken mostly from Abelson and Sussman's
 ;; Metacircular Evaluator (SICP, Chapter 4)
 (define (enclosing-environment env) (cdr env))
@@ -717,25 +731,96 @@
       (loop))))
 
 
-
-
-
-
-
 ;; For loops
-(define (make-for-block line-obj env)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-var block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-collection block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-body block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-else block)
-  (py-error "TodoError: Person A, Question 7"))
+;;;; For loop constructors
 
+;; try to with one less parameter in for-block list 
+(define (make-for-block line-obj env)     ;; creates a FOR-BLOCK
+  (let ((var (ask line-obj 'next))        ;; for is eaten, so next token is variable
+	(collection (begin (ask line-obj 'next)   ;; eat the variable
+			   ;; finally at the collection
+			   (collect-collection line-obj env)))  
+	(body (read-block (ask line-obj 'indentation) env)))
+    (list '*BLOCK* '*FOR-BLOCK* (cons var collection) body))) ;; final FOR-BLOCK 
+
+
+;; helper to collect collection
+(define (collect-collection line-obj env)   ;; grabs collection before the colon
+  (let ((token (ask line-obj 'next)))   ;; grabs first token of collection (after in)
+    (if (colon? token)                      ;; checks if at the end of collection
+	'()
+	;; starts making a token list of coll
+	(cons token (collect-collection line-obj env))))) 
+
+;;;; For loop selectors 
+;;;; assume working with (*BLOCK* *FOR-LOOP* ... ) 
+(define (for-block-var block)             ;; return the 3rd item of list
+  (caaddr block))                          
+(define (for-block-collection block)      ;; return the 4th item of list   
+  (cdaddr block))                      
+(define (for-block-body block)            ;; return the car (body) of 5th item of list
+  (car (split-block (cadddr block))))
+(define (for-block-else block)            ;; return cdr (else) of 5th item of list 
+  (cdr (split-block (cadddr block))))
+
+
+
+;;;; For loop evaluator
 (define (eval-for-block block env)
-  (py-error "TodoError: Person A, Question 7"))
+   ;; make line-obj
+  (let ((collection-obj (py-eval   ;; py-eval it 
+			 (instantiate line-obj '*DUMMY-INDENT* 
+				      (for-block-collection block)) 
+			 env))
+	(var (for-block-var block))                 ;; select variable
+	(body (for-block-body block))               ;; select body
+	(else-clause (for-block-else block)))       ;; select else-clause
+    ;; iterate and get result
+    (let ((result (ask collection-obj '__iter__ var body env))
+	  (should-eval-if else-clause))             ;; grab else clause
+      (cond ((eq? result '*BREAK)                   ;; did it break?
+	     (set! should-eval-if #f)               ;; set should-eval-if #f 
+	     *NONE*)                                ;; return *NONE* object
+	    ((not (eq? should-eval-if #f))          ;; is there an else?
+	     (eval-item (make-line-obj else-clause) env))  ;; eval it!
+	    ((eq? should-eval-if #f) *NONE*)        ;; no else? return *NONE* object
+	    (else result)))))                       ;; i think return result IDK
+     
+		
+
+
+
+#| this was my first try 
+ (define (eval-for-block block env)
+  (let ((collection-obj (py-eval 
+                             (instantiate line-obj '*DUMMY-INDENT* 
+					  (for-block-collection block))
+				 env))
+	(var (for-block-var block))
+	(body (for-block-body block))
+	(else-clause (for-block-else block)))
+    (let ((should-eval-if else-clause))
+      (define (loop)
+	(let ((result (ask collection-obj '__iter__ var body env)))
+	  (cond ((eq? result '*BREAK*) (set! should-eval-if #f) *NONE*)
+		((and (pair? result)
+		      (eq? (car result) '*RETURN*)) 
+		 result)
+		(else (loop)))))
+
+    (let ((result (ask collection-obj '__iter__ var body env))
+	  (should-eval-if else-clause))
+      (if (eq? result '*BREAK)
+	  *NONE*
+	  (if should-eval-if
+	      (eval-item (make-line-obj else-clause) env)
+	      *NONE*))))))
+     
+
+|#
+
+
+ 
 
 ;; List Access
 (define (get-slice line-obj env)
