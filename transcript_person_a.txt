@@ -123,6 +123,118 @@ True
 
 7. A7 - For Loop
 
+STk> (load "start")
+>>> for i in range(7):
+...  print i
+... 
+0
+1
+2
+3
+4
+5
+6
+
+
+
+>>> for i in [1, 2, 3, 7, 4, 9]:
+...  print i
+... 
+1
+2
+3
+7
+4
+9
+
+
+>>> for i in range(3,7):
+...  print i * i
+... 
+9
+16
+25
+36
+
+>>> for i in range (3,10):
+...  print "YEAH"
+... else: 
+...  print "THIS SUCKS"
+... 
+"YEAH"
+"YEAH"
+"YEAH"
+"YEAH"
+"YEAH"
+"YEAH"
+"YEAH"
+"THIS SUCKS"
+
+STk> (load "start")
+>>> for i in [3, 5, 7]:
+...  print i
+...  print "still looping"
+... else:
+...  print "loops over now buddy"
+... 
+3
+"still looping"
+5
+"still looping"
+7
+"still looping"
+"loops over now buddy"
+
+STk> (load "start")
+>>> for i in range(7):
+...  print "FOOOOOOOOOOO"
+... else: 
+...  print "nugs"
+... 
+"FOOOOOOOOOOO"
+"FOOOOOOOOOOO"
+"FOOOOOOOOOOO"
+"FOOOOOOOOOOO"
+"FOOOOOOOOOOO"
+"FOOOOOOOOOOO"
+"FOOOOOOOOOOO"
+"nugs"
+
+
+>>> for i in range(7):
+...  print "nugs"
+... 
+"nugs"
+"nugs"
+"nugs"
+"nugs"
+"nugs"
+"nugs"
+"nugs"
+
+>>> for i in ["yes", "i", "am", "hungry"]:
+...  print i 
+... 
+"yes"
+"i"
+"am"
+"hungry"
+
+>>> for i in ["yes", "i", "am", "hungry"]:
+...  print i 
+... else:
+...  print "well you gotta get over it"
+... 
+"yes"
+"i"
+"am"
+"hungry"
+"well you gotta get over it"
+
+
+
 8. Common Exercise - Parsing Dictionaries
 
 9. Common Exercise - Programming in Python 
+
+

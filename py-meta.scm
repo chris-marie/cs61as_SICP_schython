@@ -238,10 +238,6 @@
 		   (begin (eat-tokens line-obj)
 			  val)
 		   (py-eval line-obj env)))
-	   
-;		   (begin (eat-tokens line-obj)
-;			  *PY-TRUE*)
-;		   (py-eval line-obj env)))
 	      ;; test for membership
 	      ((in? token)
 	       (py-error "TodoError: Person B, Question 5"))
@@ -618,20 +614,92 @@
 		  *NONE*))))
       (loop))))
 
-;; For loops
-(define (make-for-block line-obj env)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-var block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-collection block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-body block)
-  (py-error "TodoError: Person A, Question 7"))
-(define (for-block-else block)
-  (py-error "TodoError: Person A, Question 7"))
 
+
+;; For loops
+;;;; For loop constructors
+
+;; try to with one less parameter in for-block list 
+(define (make-for-block line-obj env)             ;; creates a FOR-BLOCK
+  (let ((var (ask line-obj 'next))                ;; for is eaten, so next token is variable
+	(collection (begin (ask line-obj 'next)   ;; eat the variable
+			   (collect-collection line-obj env)))  ;; finally at the collection
+	(body (read-block (ask line-obj 'indentation) env)))
+    (list '*BLOCK* '*FOR-BLOCK* (cons var collection) body))) ;; final FOR-BLOCK 
+
+
+;; helper to collect collection
+(define (collect-collection line-obj env)         ;; grabs collection before the colon
+  (let ((token (ask line-obj 'next)))             ;; grabs first token of collection (after in)
+    (if (colon? token)                            ;; checks if at the end of collection
+	'()
+	(cons token (collect-collection line-obj env))))) ;; starts making a token list of coll
+
+;;;; For loop selectors 
+;;;; assume working with (*BLOCK* *FOR-LOOP* ... ) 
+(define (for-block-var block)                     ;; return the 3rd item of list
+  (caaddr block))                          
+(define (for-block-collection block)              ;; return the 4th item of list   
+  (cdaddr block))                      
+(define (for-block-body block)                    ;; return the car (body) of 5th item of list
+  (car (split-block (cadddr block))))
+(define (for-block-else block)                    ;; return the cdr (else) of 5th item of list 
+  (cdr (split-block (cadddr block))))
+
+
+
+;;;; For loop evaluator
 (define (eval-for-block block env)
-  (py-error "TodoError: Person A, Question 7"))
+  (let ((collection-obj (py-eval (instantiate line-obj '*DUMMY-INDENT*   ;; make line-obj
+					      (for-block-collection block)) ;; py-eval it 
+				 env))
+	(var (for-block-var block))                              ;; select variable
+	(body (for-block-body block))                            ;; select body
+	(else-clause (for-block-else block)))                    ;; select else-clause
+    (let ((result (ask collection-obj '__iter__ var body env))   ;; iterate and get result
+	  (should-eval-if else-clause))                          ;; grab else clause
+      (cond ((eq? result '*BREAK)                                ;; did it break?
+	     (set! should-eval-if #f)                            ;; set should-eval-if #f 
+	     *NONE*)                                             ;; return *NONE* object
+	    ((not (eq? should-eval-if #f))                       ;; is there an else?
+	     (eval-item (make-line-obj else-clause) env))        ;; eval it!
+	    ((eq? should-eval-if #f) *NONE*)                     ;; no else? return *NONE* object
+	    (else result)))))                                    ;; i think return result IDK
+     
+		
+
+
+
+#| this was my first try 
+(define (eval-for-block block env)
+  (let ((collection-obj (py-eval (instantiate line-obj '*DUMMY-INDENT* 
+					      (for-block-collection block))
+				 env))
+	(var (for-block-var block))
+	(body (for-block-body block))
+	(else-clause (for-block-else block)))
+    (let ((should-eval-if else-clause))
+      (define (loop)
+	(let ((result (ask collection-obj '__iter__ var body env)))
+	  (cond ((eq? result '*BREAK*) (set! should-eval-if #f) *NONE*)
+		((and (pair? result)
+		      (eq? (car result) '*RETURN*)) 
+		 result)
+		(else (loop)))))
+
+    (let ((result (ask collection-obj '__iter__ var body env))
+	  (should-eval-if else-clause))
+      (if (eq? result '*BREAK)
+	  *NONE*
+	  (if should-eval-if
+	      (eval-item (make-line-obj else-clause) env)
+	      *NONE*))))))
+     
+
+|#
+
+
+ 
 
 ;; List Access
 (define (get-slice line-obj env)
