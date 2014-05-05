@@ -293,3 +293,35 @@ STk> (py-read)print 'hello 'world'.'
 (0 print "hello " world ".")
 STk> (py-read)print 'hello "world".'
 (0 print "hello \"world\".")
+
+
+********************  PART 2
+********** test PY-BOOL method 'NEGATE
+STk> (ask *py-false* 'val)
+#f
+STk> (Ask *py-false* 'negate #t)
+#t
+STk> (ask *py-false* 'val)
+#t
+STk> (ask *py-false* 'negate #f)
+#f
+STk> (ask *py-false* 'val)
+#f
+STk> (ask *py-false* 'negate #t)
+#t
+STk> (ask *py-false* 'true?)
+#t
+STk> (ask *py-false* 'negate #f)
+#f
+STk> (ask *py-false* 'true?)
+#f
+
+********** test NEGATE-BOOL
+STk> (ask *py-false* 'negate #f)
+#f
+STk> (ask *py-false* 'val)
+#f
+STk> (ask (negate-bool *py-false*) 'true?)
+#t
+STk> (ask (negate-bool *py-true*) 'true?)
+#f

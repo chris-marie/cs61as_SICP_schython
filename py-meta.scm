@@ -88,17 +88,17 @@
 	      ((number? token) (make-py-num token))
 	      ((bool? token) (make-py-bool token))
 	      ((none? token) *NONE*)
-	      ((unary-op? token) (apply-unary token (eval-item line-obj env)))
+	      ((unary-op? token) (apply-unary token (eval-item line-obj env))) ;**?
 	      ((block? token) (eval-block token env))
-	      ((if? token)
+	      ((if? token)  ;;;;IF
 	       (let ((block (make-if-block line-obj env)))
 		 (ask line-obj 'push block)
 		 (py-eval line-obj env)))
-	      ((for? token)
+	      ((for? token) ;;;;FOR
 	       (let ((block (make-for-block line-obj env)))
 		 (ask line-obj 'push block)
 		 (py-eval line-obj env)))
-	      ((while? token)
+	      ((while? token) ;;;;WHILE
 	       (let ((block (make-while-block line-obj env)))
                  (ask line-obj 'push block)
                  (py-eval line-obj env)))
@@ -126,39 +126,53 @@
 		   (make-py-list
 		    (collect-sequence line-obj env close-bracket-symbol))))
 		  ((open-brace? token)
-        (make-py-dictionary
-         (collect-key-value line-obj env close-brace-symbol)))
-      ;;handle both value dereferences and value assignments of lists and dictionaries. This breaks the handle-infix model for assignments but is the cleanest way to solve the lookahead problem
-      ((bracket-dereference? token line-obj) ;;(dict['hello']) or (list[0]) or (list[x] = y)
-        (let ((val (lookup-variable-value token env)))
-          (ask line-obj 'next) ;; remove '[' token
-          (define key #f)
-          (cond
-            ((py-list? val)
-              (set! key (get-slice line-obj env))) ;;get the list slice
-            ((py-dict? val)
-             (set! key (eval-inside-delimiters line-obj env open-bracket-symbol close-bracket-symbol))) ;;get the dictionary key
-            (else (print (ask val 'type))
-              (print val)
-              (print (py-list? val))
-              (print (py-dict? val))
-              (py-error "token not subscriptable")))
+		   (make-py-dictionary
+		    (collect-key-value line-obj env close-brace-symbol)))
+    ;; handle both value dereferences and value assignments of lists and 
+    ;; dictionaries. This breaks the handle-infix model for assignments but 
+    ;; is the cleanest way to solve the lookahead problem
+		   ;;(dict['hello']) or (list[0]) or (list[x] = y)
+		  ((bracket-dereference? token line-obj)
+		   (let ((val (lookup-variable-value token env)))
+		     (ask line-obj 'next) ;; remove '[' token
+		     (define key #f)
+		     (cond
+		      ((py-list? val)
+		       (set! key (get-slice line-obj env))) ;;get the list slice
+		      ((py-dict? val)
+		       (set! key 
+			     (eval-inside-delimiters 
+			      line-obj env 
+			      open-bracket-symbol 
+			      close-bracket-symbol))) ;;get the dictionary key
+		      (else (print (ask val 'type))
+			    (print val)
+			    (print (py-list? val))
+			    (print (py-dict? val))
+			    (py-error "token not subscriptable")))
+		     
+		     (if (and (not (ask line-obj 'empty?))
+			      (eq? (ask line-obj 'peek) '=))
+			 (begin (ask line-obj 'next) ;; remove '=' token
+				;;set item in dict or list
+				(ask val '__setitem__ key (py-eval line-obj env))) 
+			 (ask val '__getitem__ key))))
+		  ((assignment? token line-obj)
+		   (define-variable! token (py-eval line-obj env) env)
+		   *NONE*)
+		  ((application? token line-obj) 
+;;application? must come before variable? 
+;;because both applications and variables start with strings: i.e: foo and foo()
+		   ;variable name, i.e, fib in fib()
+		   (let ((func (lookup-variable-value token env))) 
+		     (eval-func func line-obj env)))
+		  ((variable? token)
+		   (let ((val (lookup-variable-value token env)))
+		      ;variable lookup
+		     (if val val (py-error "NameError: Unbound variable: " token))))
+		  (else (py-error "SyntaxError: Unrecognized token: " token))))
 
-          (if (and (not (ask line-obj 'empty?))
-                   (eq? (ask line-obj 'peek) '=))
-            (begin (ask line-obj 'next) ;; remove '=' token
-                   (ask val '__setitem__ key (py-eval line-obj env))) ;;set item in dict or list
-            (ask val '__getitem__ key))))
-	      ((assignment? token line-obj)
-	        (define-variable! token (py-eval line-obj env) env)
-	        *NONE*)
-        ((application? token line-obj) ;;application? must come before variable? because both applications and variables start with strings: i.e: foo and foo()
-           (let ((func (lookup-variable-value token env))) ;variable name, i.e, fib in fib()
-             (eval-func func line-obj env)))
-        ((variable? token)
-         (let ((val (lookup-variable-value token env)))
-           (if val val (py-error "NameError: Unbound variable: " token)))) ;variable lookup
-	      (else (py-error "SyntaxError: Unrecognized token: " token))))))
+      )  )   ;; end EVAL-ITEM
 
 ;; Prints a python object.
 (define (py-print obj)
@@ -239,21 +253,27 @@
 			  val)
 		   (py-eval line-obj env)))
 	   
-;		   (begin (eat-tokens line-obj)
+;		   (begin (eat-tokens line-obj)  ????? WHY COMMENTED OUT?
 ;			  *PY-TRUE*)
 ;		   (py-eval line-obj env)))
 	      ;; test for membership
+     ;;;; B[#5) IN? NOT?
 	      ((in? token)
 	       (py-error "TodoError: Person B, Question 5"))
+	      
 	      ((not? token)
 	       (py-error "TodoError: Person B, Question 5"))
+
 	      ;; dot syntax message: val.msg
         ((dotted? token)
           (let ((func (ask val (remove-dot token))))      ;gets the py-function
             (if (and (not (ask line-obj 'empty?))
-                     (open-paren? (ask line-obj 'peek))) ;IF IT IS ACTUALLY A FUNCTION CALL, EVALUATE IT
-                (handle-infix (eval-func func line-obj env) line-obj env) ; make sure to continue handling infix: i.e -> if list.length() > 10: -> evaluate the `> 10` portion
-                (handle-infix func line-obj env)))) ;OTHERWISE RETURN THE FUNCTION ITSELF
+		     ;IF IT IS ACTUALLY A FUNCTION CALL, EVALUATE IT
+                     (open-paren? (ask line-obj 'peek))) 
+ ; make sure to continue handling infix: i.e -> if list.length() > 10: -> evaluate the `> 10` portion
+                (handle-infix (eval-func func line-obj env) line-obj env)
+		;OTHERWISE RETURN THE FUNCTION ITSELF
+                (handle-infix func line-obj env)))) 
 	      (else (begin (ask line-obj 'push token)
 			   val))))))
 
@@ -319,9 +339,9 @@
        (let ((obj (py-eval line-obj env)))
 			(cons obj
 			   (collect-sequence line-obj env close-token)))))))
-
+   ;;;; Comm[#8] COLLECT-KEY-VALUE
 (define (collect-key-value line-obj env close-token)
-  (py-error "TodoError: Both Partners. Question 8"))
+  (py-error "TodoError: Both Partners. Question 8")) ;;;
 
 
 ;; Variables and Assignment: taken mostly from Abelson and Sussman's
@@ -509,6 +529,8 @@
 	  (else (py-error "SyntaxError: unknown keyword: " type)))))
 
 ;; Conditionals
+
+   ;;;; B[#7] CONDITIONAL: IF part 1
 (define (make-if-block line-obj env)
   (py-error "TodoError: Person B, Question 7"))
 (define (if-block-pred block)
@@ -535,6 +557,7 @@
 (define (eval-else-block block env)
   (eval-sequence (else-block-body block) env))
 
+   ;;;; B[#7] CONDITIONAL: ELIF part2
 (define (make-elif-block line-obj env)
   (py-error "TodoError: Person B, Question 7"))
 (define (elif-block-pred block) (py-error "TodoError: Person B, Question 7"))
