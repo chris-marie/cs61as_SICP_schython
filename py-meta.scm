@@ -273,9 +273,7 @@
 ;		   (py-eval line-obj env)))
 	      ;; test for membership
     
- 
-
-	      ;; dot syntax message: val.msg
+ 	      ;; dot syntax message: val.msg
         ((dotted? token)
           (let ((func (ask val (remove-dot token))))      ;gets the py-function
             (if (and (not (ask line-obj 'empty?))
@@ -609,12 +607,13 @@
     (define-variable! (def-block-name block) proc env)))
 
 ;; While loops
-    ;;;; Comm
+    ;;;; Comm[#6]   WHILE
+
+;;;;;;;;;;;;  PERSON A
 (define (make-while-block line-obj env)
   (let ((pred (collect-pred line-obj env))
 	(body (read-block (ask line-obj 'indentation) env)))
     (list '*BLOCK* '*WHILE-BLOCK* pred body)))
-
 
 (define (collect-pred line-obj env)
   (define (helper line-obj env)            ;; this grabs everything before colon
@@ -624,9 +623,7 @@
 	  (cons token (helper line-obj env))))) ;; makes a list of tokens, starts with token
   (let ((indent (ask line-obj 'indentation))) ;; this is to grab the indentation, 
                                               ;;; i think after the while? this is wrong..?
-    (cons indent (helper line-obj env))))     ;; return a list of the indent plus list of tokens
-	
-
+    (cons indent (helper line-obj env)))) ;; return a list of the indent plus list of tokens
 
 (define (while-block-pred block)
   (caddr block))                       ;; grabs the third item of the list 
@@ -635,6 +632,72 @@
 (define (while-block-else block)       ;; grab block, split-it, take cdr [SINCE SPLIT BLOCK 
                                        ;; RETURNS A PAIR], which is the else
   (cdr (split-block (cadddr block))))  ;; this will be #f if there is no else 
+
+
+;;;;;;;;;;;;  PERSON B
+
+  ;; Generic Utility Functions Used for Blocks
+;; All blocks have the same generic construct, a list of:
+;; 1) the Schython block identifier:  *BLOCK*
+;; 2) the block type recognized by EVAL-BLOCK:  *<TYPE>-BLOCK*'
+;; 3) a pair of the name and parameters
+;; 4) the body of the block
+   ;; 4a)  which requires indentation for MAKE-LINE-OBJ
+
+(define (block-tag block)
+  (car block) )
+(define (block-type block)
+  (cadr block) )
+(define (block-param-pred block)
+  (caddr block) )
+(define (block-body block)
+  (cadddr block) )
+(define (block-indentation block-line-obj)
+  (ask block-line-obj 'indentation) )
+
+;; Python loop separate their predicate looping line and their body with a colon,
+;; therefore, it is useful to have a generic block procedure that takes in
+;; block line-object, parses it for the colon, and returns everything before the 
+;; colon
+(define (parse-colon line-obj env)
+  (let ((token (ask line-obj 'next)))
+    (if (colon? token)
+	'()
+	(cons token (parse-colon line-obj env)))) )	   
+
+;; a WHILE-BLOCK is a list of two block tags, a pair of name and params, and a body.
+;; exp: 
+;; (list (block-tag = *BLOCK*) (type-tag = *WHILE-BLOCK*) (while preds) (while body))
+;; ie: (list    car              cadr                        caddr     :     cadddr)
+
+
+;; Constructor: MAKE-WHILE-BLOCK    (used by eval-item and make-block) 
+(define (make-while-block line-obj env)
+  (let ((while-pred (collect-pred-list line-obj env))
+	(while-body (read-block (block-indentation line-obj) env)))
+    (list '*BLOCK* '*WHILE-BLOCK* while-pred while-body)) )
+
+(define while-block-pred block-param-pred)
+
+;; the while loop body actually is considered to seperate bodies, the while-body
+;; and the else-body
+(define (while-block-body while-block)
+  (let ((body (block-body while-block)))
+    (car (split-block body)))  )
+
+(define (while-block-else while-block)
+  (let ((body (block-body while-block)))
+    (cdr (split-block body)))  )
+
+;; The predicates of a while loop stop at the colon separating preds and while body
+;; helper procedure to collect the list of tokens before the colon
+(define (collect-pred-list line-obj env)
+  (let ((indentation (block-indentation line-obj))
+	(pred-list (parse-colon line-obj env)))
+    (cons indentation pred-list)) )
+
+
+;;;;;;;;;;;;  Comm[#6] implemented for persons A and B
 
 (define (eval-while-block block env)
   (let ((pred (while-block-pred block))
@@ -652,6 +715,12 @@
 		  (eval-item (make-line-obj else-clause) env)
 		  *NONE*))))
       (loop))))
+
+
+
+
+
+
 
 ;; For loops
 (define (make-for-block line-obj env)
