@@ -608,9 +608,9 @@
 
 ;; While loops
     ;;;; Comm[#6]   WHILE
-
+#|
 ;;;;;;;;;;;;  PERSON A
-(define (make-while-block line-obj env)
+ (define (make-while-block line-obj env)
   (let ((pred (collect-pred line-obj env))
 	(body (read-block (ask line-obj 'indentation) env)))
     (list '*BLOCK* '*WHILE-BLOCK* pred body)))
@@ -625,14 +625,14 @@
                                               ;;; i think after the while? this is wrong..?
     (cons indent (helper line-obj env)))) ;; return a list of the indent plus list of tokens
 
-(define (while-block-pred block)
+ (define (while-block-pred block)
   (caddr block))                       ;; grabs the third item of the list 
-(define (while-block-body block)       ;; assume selecting from (*BLOCK* *WHILE-BLOCK* ..)
+ (define (while-block-body block)       ;; assume selecting from (*BLOCK* *WHILE-BLOCK* ..)
   (car (split-block (cadddr block))))  ;; grab block, split-it, then take the car which is body
-(define (while-block-else block)       ;; grab block, split-it, take cdr [SINCE SPLIT BLOCK 
+ (define (while-block-else block)       ;; grab block, split-it, take cdr [SINCE SPLIT BLOCK 
                                        ;; RETURNS A PAIR], which is the else
   (cdr (split-block (cadddr block))))  ;; this will be #f if there is no else 
-
+|#
 
 ;;;;;;;;;;;;  PERSON B
 

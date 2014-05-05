@@ -379,3 +379,11 @@ Comm[#6]  WHILE
 "FOO"
 "FOO"
 "BAR"
+
+******************************  MERGE PART 2  up to WHILE,FOR,IF,DICTIONARY
+
+
+
+
+**********  IF-LOOP B[#7]
+
