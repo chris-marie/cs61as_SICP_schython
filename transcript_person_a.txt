@@ -1,0 +1,128 @@
+Laura Rodriguez-Adjunta
+Scython Project Transcript
+Person A
+
+
+
+1. Common Exercise - Ignore Comment (parser.scm)
+STk> (py-read)x = 3 # Comments # will # never # show
+(0 x = 3)
+STk> (py-read)          x = 3 # Comments # will # never # show
+(10 x = 3)
+STk> (py-read)#comments
+(0)
+STk> (py-read)        #comments
+(8)
+STk> (py-read)        #comments #on #comments
+(8)
+STk> (py-read)#hashtag
+(0)
+
+
+2. Common Exercise - Get-Indent-And-Tokens (parser.scm)
+STk> (py-read)x = 3
+(0 x = 3)
+STk> (py-read)      x = 3
+(6 x = 3)
+STk> (py-read)  x = 3
+(2 x = 3)
+
+
+3. A3 - Get String (parser.scm)
+STk> (py-read) print "Hello There World"
+(1 print "Hello There World")
+STk> (py-read) print "Hello There 'World'."
+(1 print "Hello There 'World'.")
+STk> (py-read) print 'Hello 'world'.'
+(1 print "Hello " world ".")
+STk> (py-read) print "hellllo 'world' yes"
+(1 print "hellllo 'world' yes"
+STk> (py-read) print 'Hello "world".'
+(1 print "Hello \"world\".")
+
+
+4. A4 - Contains (py-primitives.scm)
+
+Defined the following for testing:
+(define test-num-1 (make-py-num 3))
+(define test-num-2 (make-py-num 2))
+(define test-list 
+  (make-py-list (list (make-py-num 3) (make-py-num 4) 
+		      (make-py-num 5) (make-py-num 6))))
+
+
+STk> (ask (ask test-list '__contains__ test-num-1) 'true?)
+#t
+STk> (ask (ask test-list '__contains__ test-num-2) 'true?)
+#f
+
+
+5. A5 - And, Or Logical Operators (py-meta.scm)
+Testing And:
+>>> x = 3
+>>> (x == 3) and (x == 4)
+False
+>>> True and 3 and 5
+5
+>>> True and 1
+1
+>>> True and 5 and 8
+8
+>>> 5 and 5 and True
+True
+>>> True and 5 and False
+False
+>>> True and False and 5
+False
+>>> False and True and 5
+False
+
+Testing Or:
+>>> 1 or 2 or 3
+1
+>>> True or 1
+True
+>>> False or 1
+1
+>>> x = 3
+>>> x or 1
+3
+>>> 1 or x
+1
+
+
+6. Common Exercise - While Loop
+>>> x = 2
+>>> while x < 5:
+...  x = x + 1
+...  print "foo"
+... else:
+...  print "Bar"
+... 
+"foo"
+"foo"
+"foo"
+"Bar"
+
+>>> x = 3
+>>> while x < 5: 
+...  print x
+...  x = x + 1
+... 
+3
+4
+
+>>> x = 3
+>>> while x < 5: 
+...  print x 
+...  break
+... 
+3
+
+
+
+7. A7 - For Loop
+
+8. Common Exercise - Parsing Dictionaries
+
+9. Common Exercise - Programming in Python 

@@ -1,3 +1,5 @@
+
+
 (load "obj.scm")
 (load "parser.scm")
 (load "py-primitives.scm")
@@ -12,9 +14,11 @@
 ;;   /path/to/schython
 ;; my start.scm files would look like:
 ;;
-;; (load "/path/to/schython/obj.scm")
-;; (load "/path/to/schython/parser.scm")
-;; (load "/path/to/schython/py-primitives.scm")
-;; (load "/path/to/schython/py-meta.scm")
-;; (initialize-python)
+#|
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/obj.scm")
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/parser.scm")
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/py-primitives.scm")
+ (load "~/Documents/2014spring/cs61as/cs61as_SICP_schython/py-meta.scm")
+ (initialize-python)
 
+|#
