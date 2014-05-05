@@ -126,44 +126,9 @@
 		   (make-py-list
 
 		    (collect-sequence line-obj env close-bracket-symbol))))   
-	      ((open-brace? token)   ; Common-8 - Parsing Dictionary 
+	      ((open-brace? token)
 	       (make-py-dictionary
 		(collect-key-value line-obj env close-brace-symbol)))
-      ;;handle both value dereferences and value assignments of lists and dictionaries. This breaks the handle-infix model for assignments but is the cleanest way to solve the lookahead problem
-	      ((bracket-dereference? token line-obj) ;;(dict['hello']) or (list[0]) or (list[x] = y)
-	       (let ((val (lookup-variable-value token env)))
-		 (ask line-obj 'next) ;; remove '[' token
-		 (define key #f)
-		 (cond
-		  ((py-list? val)
-		   (set! key (get-slice line-obj env))) ;;get the list slice
-		  ((py-dict? val)
-		   (set! key (eval-inside-delimiters line-obj env open-bracket-symbol close-bracket-symbol))) ;;get the dictionary key
-		  (else (print (ask val 'type))
-			(print val)
-			(print (py-list? val))
-			(print (py-dict? val))
-			(py-error "token not subscriptable")))
-		 
-		 (if (and (not (ask line-obj 'empty?))
-			  (eq? (ask line-obj 'peek) '=))
-		     (begin (ask line-obj 'next) ;; remove '=' token
-			    (ask val '__setitem__ key (py-eval line-obj env))) ;;set item in dict or list
-		     (ask val '__getitem__ key))))
-	      ((assignment? token line-obj)
-	       (define-variable! token (py-eval line-obj env) env)
-	       *NONE*)
-	      ((application? token line-obj) ;;application? must come before variable? because both applications and variables start with strings: i.e: foo and foo()
-	       (let ((func (lookup-variable-value token env))) ;variable name, i.e, fib in fib()
-		 (eval-func func line-obj env)))
-	      ((variable? token)
-	       (let ((val (lookup-variable-value token env)))
-		 (if val val (py-error "NameError: Unbound variable: " token)))) ;variable lookup
-	      (else (py-error "SyntaxError: Unrecognized token: " token))))))
-		    (collect-sequence line-obj env close-bracket-symbol))))
-		  ((open-brace? token)
-		   (make-py-dictionary
-		    (collect-key-value line-obj env close-brace-symbol)))
     ;; handle both value dereferences and value assignments of lists and 
     ;; dictionaries. This breaks the handle-infix model for assignments but 
     ;; is the cleanest way to solve the lookahead problem

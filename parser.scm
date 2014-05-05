@@ -49,7 +49,7 @@
 
 	   (read-char)))) ;; chomp off newline
 
-	   (read-char))))  ;; chomp off newline
+	  
 ;; B[#3] GET-NUM
 (define (dot-symbol? symbol) (eq? symbol '|.|))  ;for symbols
 (define (dot-char? char) (eq? char #\.))   ; for characters
