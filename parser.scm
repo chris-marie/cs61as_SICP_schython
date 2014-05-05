@@ -56,12 +56,16 @@
 ;; of the form (indentation token1 token2 token3 ...).  Turns the line
 ;; 'def foo(a,b):' into (def foo |(| a |,| b |)| :).
 ;;;
+
 (define (py-read)
-  (define (get-indent-and-tokens)  ;;;; Comm[#2] GET-AND-INDENT-TOKENS
-    ;(let ((indent (get-indent 0)))    ;;; person A implementation
-    ;(cons indent (get-tokens '())))
-    (let ((indent (count-indent 0)))   ;;; person B implementation
-      (cons indent (get-tokens '())))  )
+
+ ;;;; Comm[#2] GET-AND-INDENT-TOKENS
+  (define (get-indent-and-tokens)  ;;; person A implementation
+    (let ((indent (get-indent 0)))    ;; call indent with 0 as starting indentation
+    (cons indent (get-tokens '()))) )  ;; start list with indentation and tokens  
+  ;;; person B implementation
+   ; (let ((indent (count-indent 0)))  
+   ;   (cons indent (get-tokens '() )))  )
 
   (define (reverse-brace char)
     (let ((result (assq char '((#\{ . #\}) (#\} . #\{)
@@ -87,11 +91,12 @@
 	(if (not (null? braces))
             (read-error "SyntaxError: End of file inside expression")
             '()))
+
        ((eq? char #\space)
         (read-char)
         (get-tokens braces))
        ((eq? char #\#)       ;; Ignore everything after python comment symbol '#'
-        (ignore-comment)     ;;;; Common [#1] IGNORE-COMMENT implemented
+        (ignore-comment)     ;;;; Comm[#1] IGNORE-COMMENT implemented
         '())
        ((memq char (list #\[ #\( #\{))
         (let ((s (char->symbol (read-char))))
@@ -104,10 +109,13 @@
        ((memq char (list #\, #\:))
         (let ((t (char->symbol (read-char))))
           (cons t (get-tokens braces))))
-       
-       ((memq char (list #\" #\'))   ;;;; A[#3] GET-STRING implemented 
-        (let ((t (list->string (get-string (read-char)))))
-          (cons t (get-tokens braces))))
+     ;;;; A[#3] GET-STRING implemented 
+       ((memq char (list #\" #\')) ;; check if char is opening a string
+	(let ((t (list->string (get-string (read-char))))) ;; pass in type of quote
+	  (cons t (get-tokens braces))))
+       ;((memq char (list #\" #\'))  
+        ;(let ((t (list->string (get-string (read-char)))))
+         ; (cons t (get-tokens braces))))
        
        ((memq char operators)
         (let ((t (get-operator)))
@@ -176,29 +184,32 @@
 			'**))
 		   ((eq? next #\=) (read-char) '*=)
 		   (else '*))))))
-
-   (define (get-string type)  ;;;; A[#3] GET-STRING person A
-    (let ((char (read-char)))
-      (if (eq? char type)
-	  '()
-	  (cons char (get-string type)))))
+;;;; A[#3] GET-STRING person A
+  (define (get-string type)   ;; type == quote passed  (A3)                      
+    (let ((char (read-char))) ;; char == first char after the quote 
+      (if (eq? char type)     ;; if char is the same as the quote passed in
+	  '()                 ;; finish the token!
+	  (cons char (get-string type))))) ;;  start a token list with char 
 
     ;; Reads in a string and returns a list of Scheme characters, up to, but not
     ;; including the closing quote.  Type is the Scheme character that opened
     ;; the string.  The first character returned by (read-char) when this
     ;; function is executed will be the first character of the desired string.
-#|     
+
    (define (ignore-comment)  ;;;; Comm[#1] IGRNORE-COMMENT person A
      (helper-ignore-comment))
-
-|#  
- 
-   (define (ignore-comment)  ;;;; Comm[#1] IGRNORE-COMMENT person B
+#|                           ;;;; Comm[#1] IGRNORE-COMMENT person B
+   (define (ignore-comment)  
      (read-ignore '*ignore-comment*))
-
+|#  
+  (define (get-string type)   ;; type == quote passed  (A3)                      
+    (let ((char (read-char))) ;; char == first char after the quote 
+      (if (eq? char type)     ;; if char is the same as the quote passed in
+	  '()                 ;; finish the token!
+	  (cons char (get-string type))))) ;; else, start making a token list with char 
   
    (get-indent-and-tokens)     
-    )   ;; end PY-READ
+    )  ;; end PY-READ
 
 ;; Error handler for py-read.  Needs to eat remaining tokens on the line from
 ;; user input before throwing the error.
@@ -244,18 +255,19 @@
 
 ;; Comm[#1] person A  HELPER-IGNORE-COMMENT (ignore-comment) 
 (define (helper-ignore-comment)
-  (let ((char (read-char)))
-    (cond ((eof-object? char) 
+  (let ((char (read-char)))         ;; eat the char! (hashtag eaten first time thru) 
+    (cond ((eof-object? char)       ;; reach the end of obj? return nothing
 	   '*comment-ignored*)
-	  ((char-newline? char)
+	  ((char-newline? char)     ;; reach a new line? return nothing 
 	   '*comment-ignored*)
-	  (else (helper-ignore-comment)))))
+	  (else (helper-ignore-comment)))))  ;; inside the comment, loop back through
 
 
 ;; Comm[#1] person A  GET-INDENT (get-indent-and-tokens)
+;; 2. Helper proc for (get-indent-and-tokens)
 (define (get-indent counter)
-  (let ((char (peek-char)))
-    (if (not (eq? char #\space))
-	counter
-	(begin (read-char)
-	       (get-indent (+ counter 1))))))
+  (let ((char (peek-char)))         ;; look at the next char
+    (if (not (eq? char #\space))    ;; if its not equal to a space
+	counter                     ;; return counter, i.e. number of spaces
+	(begin (read-char)          ;; else, eat the space
+	       (get-indent (+ counter 1)))))) ;; recurse on get-indent

@@ -67,7 +67,7 @@
 ;; after sending the line to py-eval.
 (define (eval-line line-obj env)
   (if (ask line-obj 'empty?)
-      *NONE*
+     *NONE*
       (if (zero? (ask line-obj 'indentation))
 	  (let ((val (py-eval line-obj env)))
 	    (if (not (ask line-obj 'empty?))
@@ -236,8 +236,12 @@
        	      ((or? token)
 	       (if (ask val 'true?)
 		   (begin (eat-tokens line-obj)
-			  *PY-TRUE*)
+			  val)
 		   (py-eval line-obj env)))
+	   
+;		   (begin (eat-tokens line-obj)
+;			  *PY-TRUE*)
+;		   (py-eval line-obj env)))
 	      ;; test for membership
 	      ((in? token)
 	       (py-error "TodoError: Person B, Question 5"))
@@ -407,7 +411,7 @@
   ;; (as a Scheme number) to check against for dedents (mostly for else and elif
   ;; blocks).  Env is the current environment, used for evaluating define
   ;; blocks.  It returns a list of lines (Scheme list of lists, NOT line-objs!).
-  (let ((unindented-line #f))
+  (let ((unindented-line #f)) 
     (lambda (old-indent env)
       (let ((new-indent #f))
 	(define (read-loop)
@@ -572,13 +576,30 @@
 
 ;; While loops
 (define (make-while-block line-obj env)
-  (py-error "TodoError: Both Partners, Question 6"))
+  (let ((pred (collect-pred line-obj env))
+	(body (read-block (ask line-obj 'indentation) env)))
+    (list '*BLOCK* '*WHILE-BLOCK* pred body)))
+
+
+(define (collect-pred line-obj env)
+  (define (helper line-obj env)            ;; this grabs everything before colon
+    (let ((token (ask line-obj 'next)))    ;; grabs first thing suppposedly after while
+      (if (colon? token)                   ;; checks if its a colon
+	  '()                              ;; return empty list, because don't want colon
+	  (cons token (helper line-obj env))))) ;; makes a list of tokens, starts with token
+  (let ((indent (ask line-obj 'indentation))) ;; this is to grab the indentation, 
+                                              ;;; i think after the while? this is wrong..?
+    (cons indent (helper line-obj env))))     ;; return a list of the indent plus list of tokens
+	
+
+
 (define (while-block-pred block)
-  (py-error "TodoError: Both Partners, Question 6"))
-(define (while-block-body block)
-  (py-error "TodoError: Both Partners, Question 6"))
-(define (while-block-else block)
-  (py-error "TodoError: Both Partners, Question 6"))
+  (caddr block))                       ;; grabs the third item of the list 
+(define (while-block-body block)       ;; assume selecting from (*BLOCK* *WHILE-BLOCK* ..)
+  (car (split-block (cadddr block))))  ;; grab block, split-it, then take the car which is body
+(define (while-block-else block)       ;; grab block, split-it, take cdr [SINCE SPLIT BLOCK 
+                                       ;; RETURNS A PAIR], which is the else
+  (cdr (split-block (cadddr block))))  ;; this will be #f if there is no else 
 
 (define (eval-while-block block env)
   (let ((pred (while-block-pred block))

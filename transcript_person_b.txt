@@ -260,3 +260,36 @@ STk> (py-read)print (list 2 3 4 6 )
 (0 print |(| list 2 3 4 6 |)|)
 STk> (py-read)print (list 2 3 4 6 1000.3)
 (0 print |(| list 2 3 4 6 1000.3 |)|)
+
+________________________________________________________________________________
+GIT MERGING AFTER PART 1 NUMS Comm 1,2 A3, B3 
+
+from my project repository:  
+>git checkout -b lrodrigueza-master master
+>git pull https://github.com/lrodrigueza/cs61as_SICP_schython.git master
+
+>git checkout master
+
+mergeing changes
+--ff (fast-forewrd) only updates branch point without creating and merge commit
+--no-ff create merge commit even when merge resolves as a fastforeward
+--edit invoke editor before commiting mechanical murge to edit auto-generated merge
+message
+
+>git merge --no-ff lrodrigueza-master   
+update on git hub
+>git push origin master
+
+************  TEST MERGE
+STk> (py-read)3
+(0 3)
+STk> (py-read)3.13
+(0 3.13)
+STk> (py-read)3.13  #comment works
+(0 3.13)
+STk> (py-read)print "hello 'world'."
+(0 print "hello 'world'.")
+STk> (py-read)print 'hello 'world'.'
+(0 print "hello " world ".")
+STk> (py-read)print 'hello "world".'
+(0 print "hello \"world\".")
