@@ -241,12 +241,26 @@
 					 (list rhs))
 			       line-obj
 			       env)))
+   ;;;; B[#5] IN?
+   ;; checks if the variable TOKEN (the nest token in line) is "in"
+	      ((in? token)
+	       (let ((next-token (eval-item line-obj env)))
+		 (let ((list-item (ask val 'val)))
+		   (if (ask next-token '__contains__ list-item)
+		       *PY-TRUE*
+		       *PY-FALSE*))) )
+		 
+   ;;;; B[#5] NOT?	      
+	      ((not? token)
+	       (py-error "TodoError: Person B, Question 5"))
 	      ;; logical infix operators
+   ;;;; A[#5] AND
 	      ((and? token)
 	       (if (ask val 'true?)
 		   (py-eval line-obj env)
 		   (begin (eat-tokens line-obj)
-			  *PY-FALSE*)))
+       		  *PY-FALSE*)))
+   ;;;; A[#5] OR
        	      ((or? token)
 	       (if (ask val 'true?)
 		   (begin (eat-tokens line-obj)
@@ -257,12 +271,8 @@
 ;			  *PY-TRUE*)
 ;		   (py-eval line-obj env)))
 	      ;; test for membership
-     ;;;; B[#5) IN? NOT?
-	      ((in? token)
-	       (py-error "TodoError: Person B, Question 5"))
-	      
-	      ((not? token)
-	       (py-error "TodoError: Person B, Question 5"))
+    
+ 
 
 	      ;; dot syntax message: val.msg
         ((dotted? token)
@@ -598,6 +608,7 @@
     (define-variable! (def-block-name block) proc env)))
 
 ;; While loops
+    ;;;; Comm
 (define (make-while-block line-obj env)
   (let ((pred (collect-pred line-obj env))
 	(body (read-block (ask line-obj 'indentation) env)))
