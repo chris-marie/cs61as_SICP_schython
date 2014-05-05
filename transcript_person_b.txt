@@ -1,0 +1,381 @@
+Christina Hamilton 
+University of California, Berkeley 
+CS61as Spring 2014
+Project 4: Scython Interpreter
+
+Comm [#1]  IGNORE-COMMENT with utility function READ-IGNORE
+NOTE argument to READ-IGNORE set to '*ignore-comment*
+
+STk> get-indent
+STk> (py-read)x = 3
+(0 x = 3)
+STk>(py-read)x = 3 + 1
+(0 x = 3 + 1)
+STk> (py-read)x = 3 + 1 # hey comment, don't print
+(0 x = 3 + 1)
+STk> (py-read)x = 3 + 1 # don't print any of these # # # NO#
+(0 x = 3 + 1)
+STk> (py-read)(define x #) #does it work inside parenthesis?
+(0 |(| define x)
+STk> (py-read)#   #by itself?
+(0)
+STk> (py-read)  #
+(0)
+STk> (py-read)what about commented out?
+(0 what about commented out ?)
+STk> (py-read)what about commented out?;#
+(0 what about commented out ? |;|)
+
+**********  ERRORS FOUND:
+STk> (py-read)what about made into a word? '#
+********** ERROR: if I make the python comment inot a scheme word, it goes into an 
+infinite loop and C-c or q cannot interupt so I have to kill STK
+STk> (py-read)(list 1 2 3)
+(0 |(| list 1 2 3 |)|)
+STk> (py-read)(list 1 2 3 #)
+(0 |(| list 1 2 3)
+
+********** ERROR it doesn't work as a word in a list
+STk> (py-read)(list 1 2 3 '#)
+********* WORKS as a character in that it doesn't print as we expect
+STk> (py-read)(list 1 2 3 #\#)
+(0 |(| list 1 2 3)
+
+********** ERROR: sentences do not work in this format -- inifite loop
+STk> '(this is a sentence)
+(this is a sentence)
+STk> (py-read)'(this is a sentence)
+********** ERROR doesn't support this sentence format
+
+STk> (se 'this 'is 'another 'sentence)
+(this is another sentence)
+STk> (py-read)(se 'this 'is 'another 'sentence)
+(0 |(| se "this " is "another " sentence |)|)
+STk> (py-read)(se 'this 'is 'another 'sentence #)
+(0 |(| se "this " is "another " sentence)
+********** ERROR ignore-comment fails for a '# word in the kinf of sentence that it
+usually supports
+STk> (py-read)(se 'this 'is 'another 'sentence '#)
+QUESTION: WHY DOES PY-READ PUPPORT ONE KIND OF SENTENCE (se 'blah 'blah), but not
+the other '(blah blah)
+
+STk> (py-read)(se 'does 'my 'sentence 'work?)
+(0 |(| se "does " my "sentence " work ? |)|)
+STk> (py-read)(se 'does 'my 'sentence 'work 'with 'py-comment-char? #\#)
+(0 |(| se "does " my "sentence " work "with " py - comment - char ?)
+STk> (py-read)(list 1 2 3)
+(0 |(| list 1 2 3 |)|)
+
+NOTE: if '#' is put in a python word.... it does not get commented out.
+STk> (py-read)(se 'hello')
+(0 |(| se "hello" |)|)
+STk> (py-read)(se '#')
+(0 |(| se "#" |)|)
+
+STk> (py-read)'hello'
+(0 "hello")
+STk> (py-read)'#'
+(0 "#")
+STk> (py-read)(se 'hello)
+**********  IN NORMAL SCHEME
+
+STk> (se 1 2 3 '#)
+*** Error:
+    read: bad # syntax: "#"
+Current eval stack:
+__________________
+STk> 
+read: unexpected close parenthesis
+
+STk> (cons 2 3)
+(2 . 3)
+STk> (cons 'hi 'hello)
+(hi . hello)
+STk> (cons 'hi 'hello#)
+(hi . |hello#|)
+STk> (cons 'hi '#)
+*** Error:
+    read: bad # syntax: "#"
+Current eval stack:
+__________________
+STk> 
+read: unexpected close parenthesis
+STk> (py-read)(se 2 3 4)
+(0 |(| se 2 3 4 |)|)
+STk> (py-read)"does it work for strings?"
+(0 "does it work for strings?")
+STk> (py-read)"does it work for strings with a py-coment? #"
+(0 "does it work for strings with a py-coment? #")
+STk> (py-read)"#"
+(0 "#")
+STk> (py-read)(cons 1 2)
+(0 |(| cons 1 2 |)|)
+STk> (py-read)(cons 1 "#")
+(0 |(| cons 1 "#" |)|)
+STk> (py-read)(cons 1 #\#)
+(0 |(| cons 1)
+STk> (py-read)(cons 1 #)
+(0 |(| cons 1)
+**********ERROR does not work for cons in a word
+STk> (py-read)(cons 1 '#)
+
+
+
+STk> (se 2 3 4 "hello")
+(2 3 4 "hello")
+STk> (se 2 3 4 "#")
+(2 3 4 "#")
+STk> '(1 2 3 "hello")
+(1 2 3 "hello")
+STk> '(1 2 3 "#")
+(1 2 3 "#")
+**********ERROR infinit loop
+STk> (py-read)'(1 2 3 4 #\#)
+
+
+********************
+***************  TESTING PARTNER'S (person A) IGNORE-COMMENT to see if she gets the 
+same error.
+
+STk> (py-read)x = 3 + 2
+(0 x = 3 + 2)
+STk> (py-read)x = 3 + 2 # this is my partners ignore-comment code
+(0 x = 3 + 2)
+STk> (py-read)#
+(0)
+STk> (py-read)these are just words
+(0 these are just words)
+STk> (py-read)these are just words # and so are these
+(0 these are just words)
+STk> (py-read)does hers work with scheme comments ;#
+(0 does hers work with scheme comments |;|)
+STk> (py-read) 1 2 3
+(0 1 2 3)
+STk> (py-read) 1 2 3 #\#
+(0 1 2 3)
+STk> (py-read)(list 1 2 3 #\#)
+(0 |(| list 1 2 3)
+STk> (py-read)(list 3 4 5 #)
+(0 |(| list 3 4 5)
+
+ERROR her IGNORE COMMENT does not work in lists as a word
+STk> (py-read)(list 3 4 5 '#)
+
+ERROR PY-READ with her code fails that same format of sentences that mine fails
+STk> (py-read)'(does her code support this kind of sentence)
+
+her code does not work for the (se  ) sentence format that mine DOES work for
+STk> (py-read)(se 'this 'is 'my 'partners 'code 'for 'ignore-comment)
+
+STk> (py-read)'(does her code support this kind of sentence)
+
+STk> (py-read)'(work with a #)
+
+STk> (py-read)3 2 4
+(0 3 2 4)
+STk> (py-read)3 2 4 '#
+
+STRANGELY enough, her code only works for (se  ) sentence format when it contains a
+py-commment in char '#\#'
+STk> (py-read)(se 'work 'as 'a 'char? #\#)
+(0 |(| se "work " as "a " char ?)
+STk> (py-read)(se 'work 'without 'py-comment?)
+(infinite loop)
+
+Comm [#2] GET-AND-INDENT-TOKENS  with utility function COUNT-INDENT
+STk> (py-read)x = 3
+(0 x = 3)
+STk> (py-read) x = 3
+(1 x = 3)
+STk> (py-read)  x = 3
+(2 x = 3)
+STk> (py-read)  x = 3
+(2 x = 3)
+STk> (py-read)                                      x = 3
+(38 x = 3)
+STk> (py-read)        #   hello nurse
+(8)
+STk> (py-read)   1     #   lovely bunch of # coconuts
+(3 1)
+STk> (py-read)   deedlelee dee #   lovely bunch of # coconuts
+(3 deedlelee dee)
+
+
+B[#3] GET-NUM  
+utility function DOT?
+STk> (comma? (char->symbol #\,))
+#t
+STk> (comma? (char->symbol #\.))
+#f
+STk> (dot-symbol? (char->symbol #\.))
+#t
+STk> (dot-symbol? (char->symbol #\,))
+#f
+STk> (dot-symbol? (char->symbol #\'))
+#f
+
+untillity function DOT-CHAR?
+STk> (dot-char? #\.)
+#t
+STk> (dot-char? (char->symbol #\.))
+#f
+STk> (dot-char? #\,)
+#f
+
+GET-NUM 
+
+original:
+ (define (get-num num-so-far)
+    ;; Reads in a number.  Num-so-far a Scheme word (we will convert back into
+    ;; a Scheme number in the get-tokens procedure).
+    ;; TODO: Person B, Question 3
+ ((char-numeric? char)
+	(let ((num (get-num "")))
+	  (if (string? num)
+              (cons (string->number num) (get-tokens braces))
+              (cons num (get-tokens braces)))))
+  (cond
+           ((and (string? token)
+                 (eq? (string-ref token 0) #\.)
+                 (char-numeric? (string-ref token 1)))
+	    (cons (word (string->symbol (string-append "0" token)))
+		  (get-tokens braces)))
+(define (get-num num-so-far)
+    (let ((char (peek-char)))
+      (if (char-numeric? char)
+	  (get-num (word num-so-far (char->symbol (read-char))))
+	  num-so-far)))
+trial 1  -infinite loop
+STk> (py-read)3.1
+(0 3.1)
+STk> (py-read)3.1 + 4.2
+(0 3.1 + 4.2)
+STk> (py-read)print 3.14.foo
+(0 print 3.14 .foo)
+STk> (py-read)print 3.14
+(0 print 3.14)
+STk> (py-read)print 3.14 +5.13
+(0 print 3.14 + 5.13)
+STk> (py-read)print (list 2 3 4 6 )
+(0 print |(| list 2 3 4 6 |)|)
+STk> (py-read)print (list 2 3 4 6 1000.3)
+(0 print |(| list 2 3 4 6 1000.3 |)|)
+
+________________________________________________________________________________
+GIT MERGING AFTER PART 1 NUMS Comm 1,2 A3, B3 
+
+from my project repository:  
+>git checkout -b lrodrigueza-master master
+>git pull https://github.com/lrodrigueza/cs61as_SICP_schython.git master
+
+>git checkout master
+
+mergeing changes
+--ff (fast-forewrd) only updates branch point without creating and merge commit
+--no-ff create merge commit even when merge resolves as a fastforeward
+--edit invoke editor before commiting mechanical murge to edit auto-generated merge
+message
+
+>git merge --no-ff lrodrigueza-master   
+update on git hub
+>git push origin master
+
+************  TEST MERGE
+STk> (py-read)3
+(0 3)
+STk> (py-read)3.13
+(0 3.13)
+STk> (py-read)3.13  #comment works
+(0 3.13)
+STk> (py-read)print "hello 'world'."
+(0 print "hello 'world'.")
+STk> (py-read)print 'hello 'world'.'
+(0 print "hello " world ".")
+STk> (py-read)print 'hello "world".'
+(0 print "hello \"world\".")
+
+
+********************  PART 2
+********** test PY-BOOL method 'NEGATE
+STk> (ask *py-false* 'val)
+#f
+STk> (Ask *py-false* 'negate #t)
+#t
+STk> (ask *py-false* 'val)
+#t
+STk> (ask *py-false* 'negate #f)
+#f
+STk> (ask *py-false* 'val)
+#f
+STk> (ask *py-false* 'negate #t)
+#t
+STk> (ask *py-false* 'true?)
+#t
+STk> (ask *py-false* 'negate #f)
+#f
+STk> (ask *py-false* 'true?)
+#f
+
+********** test NEGATE-BOOL
+STk> (ask *py-false* 'negate #f)
+#f
+STk> (ask *py-false* 'val)
+#f
+STk> (ask (negate-bool *py-false*) 'true?)
+#t
+STk> (ask (negate-bool *py-true*) 'true?)
+#f
+
+B[#5] add IN support 
+
+**********  IN
+>>> 4 in [1, 3, 4]
+True
+>>> 4 in [1, 3, 5]
+False
+
+**********  NOT IN
+>>> 4 in [1, 2, 3]
+False
+>>> 4 not in [1, 2, 3, 4]
+False
+>>> 4 not in [1, 2, 3]
+True
+>>> 4 not in [1000004, 1]
+True
+
+******************************  PART 3 BLOCK STATEMENTS
+
+Comm[#6]  WHILE
+>>> x = 3
+>>> while x < 5:
+...    print x
+...    x = x + 1
+... 
+3
+4
+>>> x = 3
+>>> while x < 5:
+...    print x
+...    break
+... 
+3
+>>> x = 3
+>>> while x < 5:
+...   x = x + 1
+...   continue
+... 
+>>> 
+>>> x = 0
+>>> while x < 10:
+...    x = x + 2
+...    print "FOO"
+... else:
+...    print "BAR"
+... 
+"FOO"
+"FOO"
+"FOO"
+"FOO"
+"FOO"
+"BAR"

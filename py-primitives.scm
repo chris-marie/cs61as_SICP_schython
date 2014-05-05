@@ -307,18 +307,34 @@
   (method (bool?) #t)
   (method (type) 'py-bool)
   (method (true?) val)
+ ;;;; B[#4] NEGATE-BOOL implementation
+  ;; I am creating a class method that negate-bool will call in order to access
+  ;; and negate the internal instantiation variable: val
+  (method (negate new-val)
+	  (set! val new-val)
+	  val)
   (method (__eq__)
     (make-py-primitive
      '==
      (lambda (other) (make-py-bool (and (eq? (ask other 'type) 'py-bool)
-					(eq? val (ask other 'val)))))))
+					(eq? val (ask other 'val))))))  )
   (method (__str__)
     (make-py-string (if val "True" "False"))))
 
 (define *PY-TRUE* (instantiate py-bool #t))
 (define *PY-FALSE* (instantiate py-bool #f))
 (define (make-py-bool val) (if (memq val '(|True| #t)) *PY-TRUE* *PY-FALSE*))
-(define (negate-bool bool) (py-error "TodoError: Person B, Question 4"))
+  
+   ;;;; B[#4] NEGATE-BOOL
+  ;; takes in a PY-BOOL object and returns the PY-BOOL object with the
+  ;;  opposite value, ie - changing val in the PY-BOOL object by method TRUE?
+(define (negate-bool bool) 
+  (let ((current-val (ask bool 'true?)))
+    (if current-val
+	(begin (ask bool 'negate #f)
+	       bool)
+	(begin (ask bool 'negate #t)
+	       bool))) )
 
 (define (make-py-list val)
   (instantiate py-list val))
@@ -418,7 +434,9 @@
 	  (py-error "IndexError: list index out of range: " n))
       (if (< n 0) (set! n (+ n (length val))))
       (replace-item n val)))
-  (method (__contains__ other)                             ;; A-4
+
+                   ;;;;A[#4] __CONTAINS__
+  (method (__contains__ other)               
     (let ((objects-in-list (ask self 'val)))
 	    (if (null?
 		 (filter (lambda (x) (ask x 'true?))
