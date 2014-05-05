@@ -124,16 +124,17 @@
 	       (if (memq 'for (ask line-obj 'tokens))
 		   (eval-list-comp line-obj env)
 		   (make-py-list
-		    <<<<<<< HEAD
-		    
-		    (collect-sequence line-obj env close-bracket-symbol))))
+
+		    (collect-sequence line-obj env close-bracket-symbol))))   
 	      ((open-brace? token)   ; Comm[#8]  - Parsing Dictionary 
-	       (make-py-dictionary   ; person A implementation
+	       (make-py-dictionary
 		(collect-key-value line-obj env close-brace-symbol)))
     ;; handle both value dereferences and value assignments of lists and 
     ;; dictionaries. This breaks the handle-infix model for assignments but 
     ;; is the cleanest way to solve the lookahead problem
 		   ;;(dict['hello']) or (list[0]) or (list[x] = y)
+
+	      ((bracket-dereference? token line-obj)
 	       (let ((val (lookup-variable-value token env)))
 		 (ask line-obj 'next) ;; remove '[' token
 		 (define key #f)
@@ -155,19 +156,23 @@
 		 (if (and (not (ask line-obj 'empty?))
 			  (eq? (ask line-obj 'peek) '=))
 		     (begin (ask line-obj 'next) ;; remove '=' token
-			    (ask val '__setitem__ key (py-eval line-obj env))) ;;set item in dict or list
+			    ;;set item in dict or list
+			    (ask val '__setitem__ key (py-eval line-obj env))) 
 		     (ask val '__getitem__ key))))
 	      ((assignment? token line-obj)
 	       (define-variable! token (py-eval line-obj env) env)
 	       *NONE*)
-	      ((application? token line-obj) ;;application? must come before variable? because both applications and variables start with strings: i.e: foo and foo()
-	       (let ((func (lookup-variable-value token env))) ;variable name, i.e, fib in fib()
+	      ((application? token line-obj)
+ ;;application? must come before variable? 
+ ;;because both applications and variables start with strings: i.e: foo and foo()
+	        ;variable name, i.e, fib in fib()
+	       (let ((func (lookup-variable-value token env)))
 		 (eval-func func line-obj env)))
 	      ((variable? token)
 	       (let ((val (lookup-variable-value token env)))
-		 (if val val (py-error "NameError: Unbound variable: " token)))) ;variable lookup
+		 ;variable lookup
+		 (if val val (py-error "NameError: Unbound variable: " token)))) 
 	      (else (py-error "SyntaxError: Unrecognized token: " token))))))
-
 
 ;; Prints a python object.
 (define (py-print obj)
@@ -341,6 +346,7 @@
 			(cons obj
 			   (collect-sequence line-obj env close-token)))))))
 
+
    ;;;; Comm[#8] COLLECT-KEY-VALUE
 (define (collect-key-value line-obj env close-token)  
   (let ((token (ask line-obj 'next)))
@@ -367,6 +373,7 @@
 		 (py-error "SyntaxError: Expected colon to separate key and value"))
 	     ))))  )
 		
+
 ;; Variables and Assignment: taken mostly from Abelson and Sussman's
 ;; Metacircular Evaluator (SICP, Chapter 4)
 (define (enclosing-environment env) (cdr env))
@@ -648,69 +655,6 @@
   (cdr (split-block (cadddr block))))  ;; this will be #f if there is no else 
 |#
 
-;;;;;;;;;;;;  PERSON B
-
-  ;; Generic Utility Functions Used for Blocks
-;; All blocks have the same generic construct, a list of:
-;; 1) the Schython block identifier:  *BLOCK*
-;; 2) the block type recognized by EVAL-BLOCK:  *<TYPE>-BLOCK*'
-;; 3) a pair of the name and parameters
-;; 4) the body of the block
-   ;; 4a)  which requires indentation for MAKE-LINE-OBJ
-
-(define (block-tag block)
-  (car block) )
-(define (block-type block)
-  (cadr block) )
-(define (block-param-pred block)
-  (caddr block) )
-(define (block-body block)
-  (cadddr block) )
-(define (block-indentation block-line-obj)
-  (ask block-line-obj 'indentation) )
-
-;; Python loop separate their predicate looping line and their body with a colon,
-;; therefore, it is useful to have a generic block procedure that takes in
-;; block line-object, parses it for the colon, and returns everything before the 
-;; colon
-(define (parse-colon line-obj env)
-  (let ((token (ask line-obj 'next)))
-    (if (colon? token)
-	'()
-	(cons token (parse-colon line-obj env)))) )	   
-
-;; a WHILE-BLOCK is a list of two block tags, a pair of name and params, and a body.
-;; exp: 
-;; (list (block-tag = *BLOCK*) (type-tag = *WHILE-BLOCK*) (while preds) (while body))
-;; ie: (list    car              cadr                        caddr     :     cadddr)
-
-
-;; Constructor: MAKE-WHILE-BLOCK    (used by eval-item and make-block) 
-(define (make-while-block line-obj env)
-  (let ((while-pred (collect-pred-list line-obj env))
-	(while-body (read-block (block-indentation line-obj) env)))
-    (list '*BLOCK* '*WHILE-BLOCK* while-pred while-body)) )
-
-(define while-block-pred block-param-pred)
-
-;; the while loop body actually is considered to seperate bodies, the while-body
-;; and the else-body
-(define (while-block-body while-block)
-  (let ((body (block-body while-block)))
-    (car (split-block body)))  )
-
-(define (while-block-else while-block)
-  (let ((body (block-body while-block)))
-    (cdr (split-block body)))  )
-
-;; The predicates of a while loop stop at the colon separating preds and while body
-;; helper procedure to collect the list of tokens before the colon
-(define (collect-pred-list line-obj env)
-  (let ((indentation (block-indentation line-obj))
-	(pred-list (parse-colon line-obj env)))
-    (cons indentation pred-list)) )
-
-
 ;;;;;;;;;;;;  Comm[#6] implemented for persons A and B
 
 (define (eval-while-block block env)
@@ -786,42 +730,6 @@
 	    ((eq? should-eval-if #f) *NONE*)        ;; no else? return *NONE* object
 	    (else result)))))                       ;; i think return result IDK
      
-		
-
-
-
-#| this was my first try 
- (define (eval-for-block block env)
-  (let ((collection-obj (py-eval 
-                             (instantiate line-obj '*DUMMY-INDENT* 
-					  (for-block-collection block))
-				 env))
-	(var (for-block-var block))
-	(body (for-block-body block))
-	(else-clause (for-block-else block)))
-    (let ((should-eval-if else-clause))
-      (define (loop)
-	(let ((result (ask collection-obj '__iter__ var body env)))
-	  (cond ((eq? result '*BREAK*) (set! should-eval-if #f) *NONE*)
-		((and (pair? result)
-		      (eq? (car result) '*RETURN*)) 
-		 result)
-		(else (loop)))))
-
-    (let ((result (ask collection-obj '__iter__ var body env))
-	  (should-eval-if else-clause))
-      (if (eq? result '*BREAK)
-	  *NONE*
-	  (if should-eval-if
-	      (eval-item (make-line-obj else-clause) env)
-	      *NONE*))))))
-     
-
-|#
-
-
- 
-
 ;; List Access
 (define (get-slice line-obj env)
   ;; only handles [i], [i:j], and slices, not [:j], [i:], or [::k]

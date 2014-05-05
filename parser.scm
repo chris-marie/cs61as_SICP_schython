@@ -46,6 +46,7 @@
   (or (eq? char #\newline) ;; you're in
       (and (eq? char #\return)
 	   (eq? (peek-char) #\newline)
+
 	   (read-char))))  ;; chomp off newline
 ;; B[#3] GET-NUM
 (define (dot-symbol? symbol) (eq? symbol '|.|))  ;for symbols
