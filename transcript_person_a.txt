@@ -121,6 +121,46 @@ True
 
 
 
+>>> x = 2 
+>>> while x < 5: 
+...  print "foo"
+...  if x == 3:  ;; this should break when x == 3
+...   break
+...  print "bar"
+...  x = x + 1
+... 
+"foo"
+"bar"
+"foo"
+
+
+>>> x = 2
+>>> while x < 5: 
+...  print "foo"
+...  x = x + 1
+...  if x == 3:
+...   continue
+...  print "bar"
+... 
+"foo"
+"foo"
+"bar"
+"foo"
+"bar"
+
+>>> x = 2
+>>> while x < 5: 
+...  x = x + 1
+...  print "foo"
+... else: 
+...  print "bar"
+... 
+"foo"
+"foo"
+"foo"
+"bar"
+
+
 7. A7 - For Loop (py-meta.scm)
 
 STk> (load "start")
@@ -231,6 +271,45 @@ STk> (load "start")
 "hungry"
 "well you gotta get over it"
 
+>>> for i in range(7):
+...  if i == 3: 
+...   continue
+...  print i
+... 
+0
+1
+2
+4
+5
+6
+
+
+>>> for i in range(8):
+...  if i == 3: 
+...   break
+...  print i
+... 
+0
+1
+2
+
+
+>>> for i in range(8):
+...  if i == 4:
+...   continue
+...  print i 
+... else:
+...  print "its over"
+... 
+0
+1
+2
+3
+5
+6
+7
+"its over"
+
 
 
 8. Common Exercise - Parsing Dictionaries (py-meta.scm)
@@ -302,8 +381,6 @@ True
 
 
 9. Common Exercise - Programming in Python 
-
-
 >>> import memoize
 (procedure)
 >>> import programs
