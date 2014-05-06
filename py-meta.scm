@@ -372,7 +372,7 @@
 				      (else  ;; if no comma, then py-error 
 				       (py-error "SyntaxError: Expected comma to separate key-value pairs"))))) )
 		 (py-error "SyntaxError: Expected colon to separate key and value"))
-	     ))))  )
+	     ))))  ))
 
 ;; Variables and Assignment: taken mostly from Abelson and Sussman's
 ;; Metacircular Evaluator (SICP, Chapter 4)
@@ -837,8 +837,7 @@
 	     *NONE*)                                ;; return *NONE* object
 	    ((not (eq? should-eval-if #f))          ;; is there an else?
 	     (eval-item (make-line-obj else-clause) env))  ;; eval it!
-	    ((eq? should-eval-if #f) *NONE*)        ;; no else? return *NONE* object
-	    (else result)))))                       ;; i think return result IDK
+	    (else *NONE*)))))                       ;; i think return result IDK
 
  
      
