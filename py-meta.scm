@@ -561,51 +561,38 @@
 ;; Conditionals
 
    ;;;; B[#7] CONDITIONAL: IF part 1
-(define (make-if-block line-obj env)
-  (if (not (and (not (ask line-obj 'empty?))      ;; ie  'elif: '
-		(eq? (ask line-obj 'next) ':)
-		(ask line-obj 'empty?)))
-      (py-error "SyntaxError: invalid syntax MAKE-IF-BLOCK")
+
+
+
+         ;;;; B[#7] MAKE-IF-BLOCK
+(define (make-if-block line-obj env)  
       (let ((if-pred (collect-pred-list line-obj env))
-	    (if-body (read-block (block-indentation line-obj) env)))
-	(list '*BLOCK* '*IF-BLOCK* if-pred if-body)))  )
+	    (if-body (read-block (block-indent line-obj) env)))
+	(list '*BLOCK* '*IF-BLOCK* if-pred (split-block if-body))) )
 
 (define (if-block-pred block)  ;caddr
   (block-param-pred block) )
 
 (define (if-block-body block)
-  (let ((body (block-body block)))
-    (car (split-block body))) )
+  (let ((body (block-proc-body block)))  ;cadddr
+    (car  body))  )
 
 (define (if-block-else block)
-  (let ((body (block-body block)))
-    (cdr (split-block body))) )
+  (let ((body (block-proc-body block)))  ;cadddr
+    (cdr body)) )
 
 (define (eval-if-block block env)
-  (let ((pred (if-block-pred block))
-	(body (if-block-body block))
-	(else-clause (if-block-else block)))
-    (let ((bool-value (py-eval (make-line-obj pred) env))
-	  (should-eval-if else-clause)) 
-      (if (ask bool-value 'true?)
-	  (if (elif-block? block)
-	      (elif->if block env)
-	      (eval-sequence body env))
-	  (cond ((eq? should-eval-if #f) *NONE*)
-		((ELIF-BLOCK block)
-		 (elif->if block env))
-		((ELSE-BLOCK block)
-;		 (set! should-eval-if #f)  ;; there can only be one else statement
-		 (eval-else-block block env))
-		(else 
-		 (py-error "SyntaxError: invalid syntax EVAL-IF-BLOCK pred=#f"))))))
-  )   ;; end EVAL-IF-BLOCK
-
-
-(define (elif->if block env)
-  (set-car! block '*BLOCK*)
-  (set-car! (cdr block) '*ELIF-BLOCK*)
-  (eval-if-block block env) )
+  (let ((if-statement 
+	 (py-eval (make-line-obj (if-block-pred block)) env)))
+    (let ((bool-value (ask if-statement 'true?)))
+      (if bool-value
+	  (eval-sequence (if-block-body block) env)  ;; procede and 
+	  (let ((else-clause (if-block-else block))) ;; similar to while loop
+	    (if (equal? else-clause #f)
+		*NONE*
+		(eval-item (make-line-obj else-clause) env) 
+		;; RET else-clause obj
+ )))))  )
 
 ;; Elif/Else blocks
 (define (make-else-block line-obj env)
@@ -613,7 +600,7 @@
 		(eq? (ask line-obj 'next) ':)
 		(ask line-obj 'empty?)))
       (py-error "SyntaxError: invalid syntax MAKE-ELSE-BLOCK")
-      (let ((body (read-block (ask line-obj 'indentation) env)))
+      (let ((body (read-block (block-indent line-obj) env)))
 	(list '*BLOCK* '*ELSE-BLOCK* (split-block body))))  )
 
 (define (else-block-body block) (caaddr block))
@@ -623,41 +610,55 @@
   (eval-sequence (else-block-body block) env))
 
    ;;;; B[#7] CONDITIONAL: ELIF part2
+
+ ;;; these are essentially my parse-colon and collect-pred-list function, but they
+ ;;; needed to be slightly modified for elif ordering
+
 (define (make-elif-block line-obj env)
-  (if (not (and (not (ask line-obj 'empty?))      ;; ie  'elif: '
-		(eq? (ask line-obj 'next) ':)
-		(ask line-obj 'empty?)))
-      (py-error "SyntaxError: invalid syntax")
-      (let ((elif-pred (collect-pred-list line-obj env))
-	    (elif-body (read-block (block-indentation line-obj) env)))
-	(list '*BLOCK* '*ELIF-BLOCK* elif-pred elif-body))) )
- 
+      (let ((elif-pred (collect-if-pred line-obj))
+	    (elif-body (split-block (read-block (block-indent line-obj) env))))
+	(list '*BLOCK* '*ELIF-BLOCK* elif-pred elif-body))  )
+       
+(define (elif-block-pred block) (block-param-pred block) ) ;;caddr
 
-(define (if-block-pred block)  ;caddr
-  (block-param-pred block) )
-
-(define (if-block-body block)
-  (let ((body (block-body block)))
-    (car (split-block body))) )
-
-(define (if-block-else block)
-  (let ((body (block-body block)))
-    (cdr (split-block body))) )
-
-      
-(define (elif-block-pred block) (block-param-pred block) )
-
-(define (elif-block-body block)
-  (let ((body (block-body block)))
-    (car (split-block body))) )
+(define (elif-block-body block)       ;; cadddr
+  (let ((body (block-proc-body block)))
+    (car body)) )
 
 (define (elif-block-else block)
- (let ((body (block-body block)))
-    (cdr (split-block body))) )
-
+  (let ((body (block-proc-body block)))  ;; cadddr
+    (car (cdr (cdr body))))  ) ;; nest!!!
 
 (define (eval-elif-block block env)
-  (eval-if-block (elif->if block env)) )
+  (eval-if-block (elif->if block) env) )   ;; convert elif to if block
+;
+;;;; IF Statement utility functions:
+
+(define (block-tag block)
+   (car block) )
+ (define (block-param-pred block)
+   (caddr block) )
+ (define (block-proc-body block)
+   (cadddr block) )
+ (define (block-indent block-line-obj)
+   (ask block-line-obj 'indentation) )
+
+(define (stop-at-colon line-obj pred-list)  ;; similar to PARSE-COLON for WHILE
+   (let ((token (ask line-obj 'peek)))
+     (if (colon? token)
+	 (begin (ask line-obj 'next)
+		pred-list)                ;; except we add token to the back for if
+	  (stop-at-colon line-obj (append pred-list (list (ask line-obj 'next)))))) )
+
+ (define (collect-if-pred line-obj)   ;; exactly same as my COLLECT-PRED-LIST
+   (let ((indentation (block-indent line-obj))
+ 	(pred-list (stop-at-colon line-obj '())))   ;; except uses new STOP-AT-COLON
+     (cons indentation pred-list)) )
+
+(define (elif->if block)   ;; In python, elif is simply a nested if
+  (set-car! (cdr block) '*IF-BLOCK*)
+  block)  ;; we need only change block tags
+  
 
 ;; Procedure definitions
 (define (make-def-block line-obj env)
@@ -727,15 +728,6 @@
  ;; 4) the body of the block
    ;; 4a)  which requires indentation for MAKE-LINE-OBJ
  
- (define (block-tag block)
-   (car block) )
- (define (block-param-pred block)
-   (caddr block) )
- (define (block-proc-body block)
-   (cadddr block) )
- (define (block-indentation block-line-obj)
-   (ask block-line-obj 'indentation) )
- 
  ;; Python loop separate their predicate looping line and their body with a colon,
  ;; therefore, it is useful to have a generic block procedure that takes in
  ;; block line-object, parses it for the colon, and returns everything before the 
@@ -749,12 +741,11 @@
  ;; a WHILE-BLOCK is a list of two block tags, a pair of name and params, and a body.
  ;; exp: 
  ;; (list (block-tag = *BLOCK*) (type-tag = *WHILE-BLOCK*) (while preds) (while body)) ;; ie: (list    car              cadr                        caddr     :     cadddr)
- 
- 
+  
  ;; Constructor: MAKE-WHILE-BLOCK    (used by eval-item and make-block) 
  (define (make-while-block line-obj env)
    (let ((while-pred (collect-pred-list line-obj env))
- 	(while-body (read-block (block-indentation line-obj) env)))
+ 	(while-body (read-block (block-indent line-obj) env)))
      (list '*BLOCK* '*WHILE-BLOCK* while-pred while-body)) )
  
  (define while-block-pred block-param-pred)
@@ -772,7 +763,7 @@
  ;; The predicates of a while loop stop at the colon separating preds and while body
  ;; helper procedure to collect the list of tokens before the colon
  (define (collect-pred-list line-obj env)
-   (let ((indentation (block-indentation line-obj))
+   (let ((indentation (block-indent line-obj))
  	(pred-list (parse-colon line-obj env)))
      (cons indentation pred-list)) )
  

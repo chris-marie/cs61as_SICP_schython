@@ -387,3 +387,59 @@ Comm[#6]  WHILE
 
 **********  IF-LOOP B[#7]
 
+from my project repository:  
+>git checkout -b lrodrigueza-master master
+>git pull https://github.com/lrodrigueza/cs61as_SICP_schython.git master
+
+>git checkout master
+
+mergeing changes
+--ff (fast-forewrd) only updates branch point without creating and merge commit
+--no-ff create merge commit even when merge resolves as a fastforeward
+--edit invoke editor before commiting mechanical murge to edit auto-generated merge
+message
+
+>git merge --no-ff   
+Update on git hub
+>git push origin master
+>>> x = 7
+>>> if x == 7:
+...   print 'hello'
+... 
+"hello"
+>>> x = 10
+>>> if x == 5:
+...   print 'half-way'
+... else:
+...   print x / 2
+... 
+5
+>>> x = 4
+>>> if x < 10:
+...   x = x + 1
+... else:
+...   print 'foo'
+... 
+>>>x
+5
+>>> x = 3
+>>> if x == 3:
+...    print x + 1
+... elif x < 3:
+...    print x + 2
+... elif x > 3:
+...    print x + 4
+... else:
+...    print 'foo'
+... 
+4
+>>> x = 10
+>>> if x > 10:
+...    print 'hello'
+... elif x == 10:
+...    print 'blastoff'
+... else:
+...    print 'awe man'
+... 
+"blastoff"
+
