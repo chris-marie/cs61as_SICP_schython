@@ -310,7 +310,41 @@ STk> (load "start")
 7
 "its over"
 
-
+>>> for i in range(8):
+...  print i
+... 
+0
+1
+2
+3
+4
+5
+6
+7
+>>> for i in range(8):
+...  print i 
+...else:
+... print "over"
+... 
+0
+1
+2
+3
+4
+5
+6
+7
+"over"
+>>> for i in range(8):
+...  if i == 5:
+...   break
+...  print i 
+... 
+0
+1
+2
+3
+4
 
 8. Common Exercise - Parsing Dictionaries (py-meta.scm)
 

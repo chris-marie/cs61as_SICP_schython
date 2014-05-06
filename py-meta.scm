@@ -796,7 +796,7 @@
 
 ;;;; For loop evaluator
 (define (eval-for-block block env)
-  (let ((collection-obj (py-eval (instantiate line-obj '*DUMMY-INDENT*   ;; make line-obj
+  (let ((collection-obj (py-eval (instantiate line-obj '*DUMMY-INDENT*      ;; make line-obj
 					      (for-block-collection block)) ;; py-eval it 
 				 env))
 	(var (for-block-var block))                              ;; select variable
@@ -809,8 +809,8 @@
 	     *NONE*)                                             ;; return *NONE* object
 	    ((not (eq? should-eval-if #f))                       ;; is there an else?
 	     (eval-item (make-line-obj else-clause) env))        ;; eval it!
-	    ((eq? should-eval-if #f) *NONE*)                     ;; no else? return *NONE* object
-	    (else result)))))                                    ;; i think return result IDK
+	    (else *NONE*)))))                     ;; no else? return *NONE* object
+	                                       
      
 		
 
