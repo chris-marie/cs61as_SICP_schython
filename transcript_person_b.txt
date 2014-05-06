@@ -443,3 +443,81 @@ Update on git hub
 ... 
 "blastoff"
 
+**********  Comm[#8] DICTIONARY
+
+>>> x = { 1 : 3 , 2 : 3 }
+>>> x
+{
+  1 : 3,
+  2 : 3
+}
+>>> x[1]
+3
+>>> x[2]
+3
+>>> if x[1] == x[2]:
+...    print 'it works!!'
+... else:
+...    print 'FOOY'
+... 
+"it works!!"
+ >>> x = { "honey-cat" : "bell" , "raja" : "plum" , "midnight" : "el gato" }
+>>> "raja" in x 
+True
+>>> "cindy loo" in x
+False
+>>> catAge = 10
+>>> myCurrentCat = x["raja"]
+>>> print myCurrentCat
+"plum"
+>>> pet = { myCurrentCat : catAge }
+>>> pet
+{
+  "plum" : 10
+}
+
+**********  Comm[#9]  MEMOIZE  and FIB_MEMO
+
+ >>> import memoize
+(procedure)
+>>> import programs
+(x memo)
+(x)
+(x memo)
+(x)
+>>> fib_memo(1)
+1
+>>> fib_memo(17)
+1597
+>>> factorial(17)
+355687428096000
+>>> x = 0
+>>> while x > 17:
+...    print fib_memo(x)
+...    x = x + 1
+... 
+>>> x
+0
+>>> while x < 17:
+...    print fib_memo(x)
+...    x = x + 1
+... else:
+...    factorial(x)
+... 
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
