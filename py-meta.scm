@@ -347,8 +347,9 @@
 			   (collect-sequence line-obj env close-token)))))))
 
 
-   ;;;; Comm[#8] COLLECT-KEY-VALUE
-(define (collect-key-value line-obj env close-token)  
+   ;;;; Comm[#8] COLLECT-KEY-VALUE  person A
+#| 
+ (define (collect-key-value line-obj env close-token)  
   (let ((token (ask line-obj 'next)))
     (cond ((eq? token close-token) '())
 	  ((comma? token) (collect-key-value line-obj env close-token)) 
@@ -372,8 +373,10 @@
 				       (py-error "SyntaxError: Expected comma to separate key-value pairs"))))) )
 		 (py-error "SyntaxError: Expected colon to separate key and value"))
 	     ))))  )
-		
+|#
 
+(define (advance line-obj)
+  (ask line-obj 'next) )
 ;; Variables and Assignment: taken mostly from Abelson and Sussman's
 ;; Metacircular Evaluator (SICP, Chapter 4)
 (define (enclosing-environment env) (cdr env))
