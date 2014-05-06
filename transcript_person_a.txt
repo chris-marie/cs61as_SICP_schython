@@ -304,3 +304,30 @@ True
 9. Common Exercise - Programming in Python 
 
 
+>>> import memoize
+(procedure)
+>>> import programs
+()
+(x)
+(x memo)
+(x)
+(x memo)
+(x)
+>>> fib_memo(1)
+1
+>>> fib_memo(0)
+0
+>>> fib_memo(4)
+3
+>>> fib_memo(100)
+354224848179261915075
+>>> factorial(2)
+2
+>>> factorial(3)
+6
+>>> factorial(100)
+93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000
+>>> factorial(4)
+24
+>>> factorial(10)
+3628800

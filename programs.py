@@ -1,6 +1,16 @@
-def fib(n):
-    if n == 0 or n == 1:                # fib(0) = 0, fib(1) = 1
-        return n
+def __factorial(x, memo):
+    if x <= 1:
+        return x
     else:
-        return fib(n-1) + fib(n-2)      # fib(n) = fib(n-1) + fib(n-2)
+        return x * memo(x-1)
 
+factorial = memoize(__factorial)
+
+
+def __fib(x, memo):
+    if x <=1:
+        return x
+    else: 
+        return memo(x-1) + memo(x-2)
+
+fib_memo = memoize(__fib)

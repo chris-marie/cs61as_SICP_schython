@@ -559,6 +559,86 @@
 
 ;; Conditionals
 
+
+(define (make-if-block line-obj env)
+(define (helper-if line-obj lst)
+  (if (colon? (ask line-obj 'peek))
+       (begin (ask line-obj 'next)
+       lst)
+	 (helper-if line-obj (append lst (list (ask line-obj 'next))))))
+
+(let ((helper-pred-if (cons (ask line-obj 'indentation) (helper-if line-obj '())))
+      (if-body (read-block (ask line-obj 'indentation) env)))
+(list '*BLOCK* '*IF-BLOCK* helper-pred-if (split-block if-body))))
+(define (if-block-pred block)
+ (caddr block))
+(define (if-block-body block)
+  (car (cadddr block)))
+(define (if-block-else block)
+  (cdr (cadddr block)))
+
+(define (eval-if-block block env)
+(let (( py-obj-if (py-eval (make-line-obj (if-block-pred block)) env)))
+
+  (if (ask py-obj-if 'true?)
+      (eval-sequence (if-block-body block) env)
+      (if (equal? (if-block-else block) #f)
+	  *NONE*
+
+	  (eval-item (make-line-obj (if-block-else block)) env)))))
+  
+
+;; Elif/Else blocks
+(define (make-else-block line-obj env)
+  (if (not (and (not (ask line-obj 'empty?))
+		(eq? (ask line-obj 'next) ':)
+		(ask line-obj 'empty?)))
+      (py-error "SyntaxError: invalid syntax")
+      (let ((body (read-block (ask line-obj 'indentation) env)))
+	(list '*BLOCK* '*ELSE-BLOCK* (split-block body)))))
+(define (else-block-body block) (caaddr block))
+(define (else-block-else block) (py-error "SyntaxError: too many else clauses"))
+
+(define (eval-else-block block env)
+  (eval-sequence (else-block-body block) env))
+
+(define (make-elif-block line-obj env)
+  
+  (define (helper-elif line-obj lst)
+  (if (colon? (ask line-obj 'peek))
+       (begin (ask line-obj 'next)
+       lst)
+	 (helper-elif line-obj (append lst (list (ask line-obj 'next))))))
+
+(let ((helper-pred-elif (cons (ask line-obj 'indentation) (helper-elif line-obj '())))
+      (elif-body (read-block (ask line-obj 'indentation) env)))
+ (list '*BLOCK* '*ELIF-BLOCK* helper-pred-elif (split-block elif-body))))
+(define (elif-block-pred block)
+   (caddr block))
+(define (elif-block-body block)
+  (car (cadddr block)))
+(define (elif-block-else block)
+ (car (cdr (cdr (cadddr block)))))
+(define (eval-elif-block block env)
+    (set-car! (cdr block) '*IF-BLOCK*)
+  (eval-if-block block env))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#|
    ;;;; B[#7] CONDITIONAL: IF part 1
 (define (make-if-block line-obj env)
   (py-error "TodoError: Person B, Question 7"))
@@ -595,6 +675,14 @@
 
 (define (eval-elif-block block env)
   (py-error "TodoError: Person B, Question 7"))
+
+
+
+
+|#
+
+
+
 
 ;; Procedure definitions
 (define (make-def-block line-obj env)
