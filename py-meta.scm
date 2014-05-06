@@ -562,25 +562,60 @@
 
    ;;;; B[#7] CONDITIONAL: IF part 1
 (define (make-if-block line-obj env)
-  (py-error "TodoError: Person B, Question 7"))
-(define (if-block-pred block)
-  (py-error "TodoError: Person B, Question 7"))
+  (if (not (and (not (ask line-obj 'empty?))      ;; ie  'elif: '
+		(eq? (ask line-obj 'next) ':)
+		(ask line-obj 'empty?)))
+      (py-error "SyntaxError: invalid syntax MAKE-IF-BLOCK")
+      (let ((if-pred (collect-pred-list line-obj env))
+	    (if-body (read-block (block-indentation line-obj) env)))
+	(list '*BLOCK* '*IF-BLOCK* if-pred if-body)))  )
+
+(define (if-block-pred block)  ;caddr
+  (block-param-pred block) )
+
 (define (if-block-body block)
-  (py-error "TodoError: Person B, Question 7"))
+  (let ((body (block-body block)))
+    (car (split-block body))) )
+
 (define (if-block-else block)
-  (py-error "TodoError: Person B, Question 7"))
+  (let ((body (block-body block)))
+    (cdr (split-block body))) )
 
 (define (eval-if-block block env)
-  (py-error "TodoError: Person B, Question 7"))
+  (let ((pred (if-block-pred block))
+	(body (if-block-body block))
+	(else-clause (if-block-else block)))
+    (let ((bool-value (py-eval (make-line-obj pred) env))
+	  (should-eval-if else-clause)) 
+      (if (ask bool-value 'true?)
+	  (if (elif-block? block)
+	      (elif->if block env)
+	      (eval-sequence body env))
+	  (cond ((eq? should-eval-if #f) *NONE*)
+		((ELIF-BLOCK block)
+		 (elif->if block env))
+		((ELSE-BLOCK block)
+;		 (set! should-eval-if #f)  ;; there can only be one else statement
+		 (eval-else-block block env))
+		(else 
+		 (py-error "SyntaxError: invalid syntax EVAL-IF-BLOCK pred=#f"))))))
+  )   ;; end EVAL-IF-BLOCK
+
+
+(define (elif->if block env)
+  (set-car! block '*BLOCK*)
+  (set-car! (cdr block) '*ELIF-BLOCK*)
+  (eval-if-block block env) )
 
 ;; Elif/Else blocks
 (define (make-else-block line-obj env)
-  (if (not (and (not (ask line-obj 'empty?))
+  (if (not (and (not (ask line-obj 'empty?))      ;; ie  'else: '
 		(eq? (ask line-obj 'next) ':)
 		(ask line-obj 'empty?)))
-      (py-error "SyntaxError: invalid syntax")
+      (py-error "SyntaxError: invalid syntax MAKE-ELSE-BLOCK")
       (let ((body (read-block (ask line-obj 'indentation) env)))
-	(list '*BLOCK* '*ELSE-BLOCK* (split-block body)))))
+	(list '*BLOCK* '*ELSE-BLOCK* (split-block body))))  )
+
 (define (else-block-body block) (caaddr block))
 (define (else-block-else block) (py-error "SyntaxError: too many else clauses"))
 
@@ -589,13 +624,40 @@
 
    ;;;; B[#7] CONDITIONAL: ELIF part2
 (define (make-elif-block line-obj env)
-  (py-error "TodoError: Person B, Question 7"))
-(define (elif-block-pred block) (py-error "TodoError: Person B, Question 7"))
-(define (elif-block-body block) (py-error "TodoError: Person B, Question 7"))
-(define (elif-block-else block) (py-error "TodoError: Person B, Question 7"))
+  (if (not (and (not (ask line-obj 'empty?))      ;; ie  'elif: '
+		(eq? (ask line-obj 'next) ':)
+		(ask line-obj 'empty?)))
+      (py-error "SyntaxError: invalid syntax")
+      (let ((elif-pred (collect-pred-list line-obj env))
+	    (elif-body (read-block (block-indentation line-obj) env)))
+	(list '*BLOCK* '*ELIF-BLOCK* elif-pred elif-body))) )
+ 
+
+(define (if-block-pred block)  ;caddr
+  (block-param-pred block) )
+
+(define (if-block-body block)
+  (let ((body (block-body block)))
+    (car (split-block body))) )
+
+(define (if-block-else block)
+  (let ((body (block-body block)))
+    (cdr (split-block body))) )
+
+      
+(define (elif-block-pred block) (block-param-pred block) )
+
+(define (elif-block-body block)
+  (let ((body (block-body block)))
+    (car (split-block body))) )
+
+(define (elif-block-else block)
+ (let ((body (block-body block)))
+    (cdr (split-block body))) )
+
 
 (define (eval-elif-block block env)
-  (py-error "TodoError: Person B, Question 7"))
+  (eval-if-block (elif->if block env)) )
 
 ;; Procedure definitions
 (define (make-def-block line-obj env)
@@ -636,7 +698,7 @@
 	(body (read-block (ask line-obj 'indentation) env)))
     (list '*BLOCK* '*WHILE-BLOCK* pred body)))
 
-(define (collect-pred line-obj env)
+ (define (collect-pred line-obj env)
   (define (helper line-obj env)            ;; this grabs everything before colon
     (let ((token (ask line-obj 'next)))    ;; grabs first thing suppposedly after while
       (if (colon? token)                   ;; checks if its a colon
@@ -648,13 +710,72 @@
 
  (define (while-block-pred block)
   (caddr block))                       ;; grabs the third item of the list 
- (define (while-block-body block)       ;; assume selecting from (*BLOCK* *WHILE-BLOCK* ..)
-  (car (split-block (cadddr block))))  ;; grab block, split-it, then take the car which is body
- (define (while-block-else block)       ;; grab block, split-it, take cdr [SINCE SPLIT BLOCK 
+ ; (define (while-block-body block)       ;; assume selecting from (*BLOCK* *WHILE-BLOCK* ..)
+ ; (car (split-block (cadddr block))))  ;; grab block, split-it, then take the car which is body
+; (define (while-block-else block)       ;; grab block, split-it, take cdr [SINCE SPLIT BLOCK 
                                        ;; RETURNS A PAIR], which is the else
-  (cdr (split-block (cadddr block))))  ;; this will be #f if there is no else 
+ ; (cdr (split-block (cadddr block))))  ;; this will be #f if there is no else 
 |#
 
+;;;;;;;;;;;;  PERSON B
+ 
+   ;; Generic Utility Functions Used for Blocks
+ ;; All blocks have the same generic construct, a list of:
+ ;; 1) the Schython block identifier:  *BLOCK*
+ ;; 2) the block type recognized by EVAL-BLOCK:  *<TYPE>-BLOCK*'
+ ;; 3) a pair of the name and parameters
+ ;; 4) the body of the block
+   ;; 4a)  which requires indentation for MAKE-LINE-OBJ
+ 
+ (define (block-tag block)
+   (car block) )
+ (define (block-param-pred block)
+   (caddr block) )
+ (define (block-proc-body block)
+   (cadddr block) )
+ (define (block-indentation block-line-obj)
+   (ask block-line-obj 'indentation) )
+ 
+ ;; Python loop separate their predicate looping line and their body with a colon,
+ ;; therefore, it is useful to have a generic block procedure that takes in
+ ;; block line-object, parses it for the colon, and returns everything before the 
+ ;; colon
+ (define (parse-colon line-obj env)
+   (let ((token (ask line-obj 'next)))
+     (if (colon? token)
+ 	'()
+ 	(cons token (parse-colon line-obj env)))) )	   
+ 
+ ;; a WHILE-BLOCK is a list of two block tags, a pair of name and params, and a body.
+ ;; exp: 
+ ;; (list (block-tag = *BLOCK*) (type-tag = *WHILE-BLOCK*) (while preds) (while body)) ;; ie: (list    car              cadr                        caddr     :     cadddr)
+ 
+ 
+ ;; Constructor: MAKE-WHILE-BLOCK    (used by eval-item and make-block) 
+ (define (make-while-block line-obj env)
+   (let ((while-pred (collect-pred-list line-obj env))
+ 	(while-body (read-block (block-indentation line-obj) env)))
+     (list '*BLOCK* '*WHILE-BLOCK* while-pred while-body)) )
+ 
+ (define while-block-pred block-param-pred)
+ 
+ ;; the while loop body actually is considered to seperate bodies, the while-body
+ ;; and the else-body
+ (define (while-block-body while-block)
+   (let ((body (block-proc-body while-block)))
+     (car (split-block body)))  )
+ 
+ (define (while-block-else while-block)
+   (let ((body (block-proc-body while-block)))
+     (cdr (split-block body)))  )
+ 
+ ;; The predicates of a while loop stop at the colon separating preds and while body
+ ;; helper procedure to collect the list of tokens before the colon
+ (define (collect-pred-list line-obj env)
+   (let ((indentation (block-indentation line-obj))
+ 	(pred-list (parse-colon line-obj env)))
+     (cons indentation pred-list)) )
+ 
 ;;;;;;;;;;;;  Comm[#6] implemented for persons A and B
 
 (define (eval-while-block block env)
